@@ -13,6 +13,7 @@
 <script src="/shared/Progression.js"></script>
 <script src="/shared/GameTime.js"></script>
 <script src="/shared/World.js"></script>
+<script src="/shared/Changelog.js"></script>
 <script src="/shared/game.js"></script>
 </head>
 <body>
@@ -37,9 +38,9 @@
     <div><b>WASD / setas</b> mover</div><div><b>botão esquerdo</b> minerar (segure)</div>
     <div><b>botão direito</b> colocar item selecionado</div><div><b>1–8 / scroll</b> selecionar na hotbar</div>
     <div><b>E</b> inventário e fabricação</div><div><b>Enter</b> chat · <b>T</b> jogadores</div>
-    <div><b>P</b> perfil</div><div><b>Esc</b> fecha qualquer janela</div>
+    <div><b>P</b> perfil · <b>C</b> changelog</div><div><b>Esc</b> fecha qualquer janela</div>
   </div>
-  <div class="links"><button id="btn-controls">Controles</button><button id="btn-credits">Créditos</button></div>
+  <div class="links"><button id="btn-controls">Controles</button><button id="btn-changelog">Changelog</button><button id="btn-credits">Créditos</button></div>
   <div class="ver">v0.3 protótipo · <span id="menu-seed"></span></div>
 </div>
 
@@ -58,6 +59,7 @@
     <button data-open="inv"><b>E</b> inventário</button>
     <button data-open="players"><b>T</b> jogadores</button>
     <button data-open="profile"><b>P</b> perfil</button>
+    <button data-open="changelog"><b>C</b> changelog</button>
   </div>
 </div>
 
@@ -159,6 +161,46 @@
         <span class="subtitle" style="font-size:18px;margin-top:4px">Conquistas <span class="dim" style="font-family:'VT323'" id="pf-achcount"></span></span>
         <div class="ach" id="pf-ach"></div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 1i changelog ===== -->
+<div id="changelog" class="modal-bg hidden">
+  <div class="modal">
+    <div class="cl-header">
+      <div class="row" style="align-items:center;gap:12px">
+        <span class="title">Notas de Atualização</span>
+        <span class="cl-badge-top" id="cl-badge-top">v0.3.0</span>
+      </div>
+      <button class="cl-close" id="cl-close" title="Fechar (Esc)">✕</button>
+    </div>
+    <div class="cl-body">
+      <div class="cl-sidebar">
+        <div class="subtitle" style="font-size:17px;margin-bottom:8px">Versões</div>
+        <div class="cl-versions" id="cl-versions"></div>
+        <div class="cl-stats" id="cl-stats"></div>
+      </div>
+      <div class="cl-main">
+        <div class="cl-toolbar">
+          <div class="cl-search-box">
+            <input id="cl-search" maxlength="40" placeholder="Buscar alteração (ex: comércio, mineração...)" autocomplete="off">
+          </div>
+          <div class="cl-filters" id="cl-filters">
+            <button class="cl-filter on" data-type="all">Todos</button>
+            <button class="cl-filter" data-type="novo">Novidades</button>
+            <button class="cl-filter" data-type="melhoria">Melhorias</button>
+            <button class="cl-filter" data-type="correcao">Correções</button>
+            <button class="cl-filter" data-type="balanceamento">Balanceamento</button>
+          </div>
+        </div>
+        <div class="cl-version-banner" id="cl-banner"></div>
+        <div class="cl-list" id="cl-list"></div>
+      </div>
+    </div>
+    <div class="cl-footer">
+      <span class="dim" style="font-size:16px">Pressione <b>Esc</b> ou <b>C</b> para fechar a qualquer momento</span>
+      <span class="dim2" style="font-size:15px">Terras Abertas · Desenvolvimento Ativo</span>
     </div>
   </div>
 </div>

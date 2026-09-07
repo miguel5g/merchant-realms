@@ -8,10 +8,12 @@ const { Crafting, canCraft, craftableCount, craft, offerValue } = require('./Cra
 const { Progression, levelFromXp, xpForLevel, titleFor, statNum, skillLevel, skillProgress } = require('./Progression');
 const { GameTime, gameTime, nightAlpha, fmtClock } = require('./GameTime');
 const { World, dist, inReach, mineTime } = require('./World');
+const { CHANGELOG } = require('./Changelog');
 
 const Game = {
   // Constantes
   ...constants,
+  CHANGELOG,
 
   // Classes
   PerlinNoise,

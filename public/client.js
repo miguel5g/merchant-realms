@@ -59,7 +59,9 @@ $('#name').value = localStorage.getItem('nome') || '';
 $('#name').addEventListener('keydown', e => { if (e.key === 'Enter') $('#join').click(); });
 $('#create').onclick = () => toast('Para criar um servidor: rode outra instância com PORT e SEED diferentes e liste em PEERS.');
 $('#btn-controls').onclick = () => $('#controls').classList.toggle('hidden');
+$('#btn-changelog').onclick = () => openChangelog();
 $('#btn-credits').onclick = () => toast('Protótipo em p5.js + Fastify. Interface baseada no design "Terras Abertas".');
+const menuVerEl = $('.ver'); if (menuVerEl) { menuVerEl.style.cursor = 'pointer'; menuVerEl.title = 'Ver changelog e novidades'; menuVerEl.onclick = () => openChangelog(); }
 loadServers();
 
 /* ============================================================
@@ -134,7 +136,7 @@ function setup() {
   document.oncontextmenu = e => { e.preventDefault(); };
 }
 function windowResized() { resizeCanvas(windowWidth, windowHeight); }
-function uiOpen() { return !$('#inv').classList.contains('hidden') || !$('#trade').classList.contains('hidden') || !$('#profile').classList.contains('hidden'); }
+function uiOpen() { return !$('#inv').classList.contains('hidden') || !$('#trade').classList.contains('hidden') || !$('#profile').classList.contains('hidden') || !$('#changelog').classList.contains('hidden'); }
 function typing() { const a = document.activeElement; return a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA'); }
 
 function draw() {
@@ -291,18 +293,20 @@ function worldTooltip() {
 /* ============================================================
    JANELAS · teclado
    ============================================================ */
-function closeAll() { ['#inv', '#trade', '#profile', '#chatbox', '#players', '#ctx'].forEach(s => $(s).classList.add('hidden')); heldFrom = null; $('#held').classList.add('hidden'); hideTip(); if (trade) send('trade_cancel'); }
-function toggle(id) { const el = $('#' + id); const open = el.classList.contains('hidden'); if (id === 'inv' || id === 'profile') { $('#inv').classList.add('hidden'); $('#profile').classList.add('hidden'); heldFrom = null; $('#held').classList.add('hidden'); } if (open) { el.classList.remove('hidden'); if (id === 'inv') renderInventory(); if (id === 'profile') renderProfile(); if (id === 'players') renderPlayers(); } else el.classList.add('hidden'); }
+function closeAll() { ['#inv', '#trade', '#profile', '#changelog', '#chatbox', '#players', '#ctx'].forEach(s => $(s).classList.add('hidden')); heldFrom = null; $('#held').classList.add('hidden'); hideTip(); if (trade) send('trade_cancel'); }
+function toggle(id) { const el = $('#' + id); const open = el.classList.contains('hidden'); if (id === 'inv' || id === 'profile' || id === 'changelog') { $('#inv').classList.add('hidden'); $('#profile').classList.add('hidden'); $('#changelog').classList.add('hidden'); heldFrom = null; $('#held').classList.add('hidden'); } if (open) { el.classList.remove('hidden'); if (id === 'inv') renderInventory(); if (id === 'profile') renderProfile(); if (id === 'players') renderPlayers(); if (id === 'changelog') renderChangelog(); } else el.classList.add('hidden'); }
 $('#quick').querySelectorAll('button').forEach(b => b.onclick = () => toggle(b.dataset.open));
 document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && !$('#changelog').classList.contains('hidden')) { $('#changelog').classList.add('hidden'); return; }
   if (!inGame) return;
-  if (e.key === 'Escape') { if (typing()) { document.activeElement.blur(); $('#chatbox').classList.add('hidden'); } else if (trade) { send('trade_cancel'); } else { ['#inv', '#profile', '#players', '#ctx'].forEach(s => $(s).classList.add('hidden')); $('#chatbox').classList.add('hidden'); heldFrom = null; $('#held').classList.add('hidden'); } return; }
+  if (e.key === 'Escape') { if (typing()) { document.activeElement.blur(); $('#chatbox').classList.add('hidden'); } else if (trade) { send('trade_cancel'); } else { ['#inv', '#profile', '#changelog', '#players', '#ctx'].forEach(s => $(s).classList.add('hidden')); $('#chatbox').classList.add('hidden'); heldFrom = null; $('#held').classList.add('hidden'); } return; }
   if (typing()) return;
   if (e.key === 'Enter') { e.preventDefault(); $('#chatbox').classList.remove('hidden'); renderChat(); $('#chatinput').focus(); return; }
   if (trade) return;
   const k = e.key.toLowerCase();
   if (k === 'e' || e.key === 'Tab') { e.preventDefault(); toggle('inv'); }
   else if (k === 'p') toggle('profile');
+  else if (k === 'c') toggle('changelog');
   else if (k === 't') toggle('players');
   else if (e.key >= '1' && e.key <= '8') setSel(+e.key - 1);
   if (['w', 'a', 's', 'd', ' '].includes(k) || e.key.startsWith('Arrow')) e.preventDefault();
@@ -477,3 +481,99 @@ function renderProfile() {
 /* ---------- toast ---------- */
 let toastT;
 function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.remove('hidden'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.add('hidden'), 3500); }
+
+/* ============================================================
+   1i · CHANGELOG
+   ============================================================ */
+let changelogVer = 0, changelogFilter = 'all', changelogSearch = '';
+
+function openChangelog() {
+  $('#changelog').classList.remove('hidden');
+  renderChangelog();
+}
+
+function renderChangelog() {
+  const list = Game.CHANGELOG || [];
+  if (!list.length) return;
+  if (changelogVer >= list.length) changelogVer = 0;
+  const cur = list[0];
+  $('#cl-badge-top').textContent = cur ? cur.version : 'v0.3.0';
+
+  // Lista de versões na barra lateral
+  $('#cl-versions').innerHTML = list.map((v, i) => `
+    <button class="cl-ver-btn ${i === changelogVer ? 'sel' : ''}" data-vi="${i}">
+      <div class="v-top">
+        <span class="v-ver">${esc(v.version)}</span>
+        ${v.current ? '<span class="tag-cur">atual</span>' : ''}
+      </div>
+      <div class="v-date">${esc(v.date)}</div>
+      <div class="v-sub">${esc(v.title)}</div>
+    </button>
+  `).join('');
+
+  $('#cl-versions').querySelectorAll('[data-vi]').forEach(btn => {
+    btn.onclick = () => {
+      changelogVer = +btn.dataset.vi;
+      renderChangelog();
+    };
+  });
+
+  // Estatísticas gerais
+  const totalChanges = list.reduce((acc, v) => acc + (v.items ? v.items.length : 0), 0);
+  $('#cl-stats').innerHTML = `
+    <div><b>${list.length}</b> versões lançadas</div>
+    <div><b>${totalChanges}</b> alterações registradas</div>
+  `;
+
+  renderChangelogList();
+}
+
+function renderChangelogList() {
+  const list = Game.CHANGELOG || [];
+  const v = list[changelogVer];
+  if (!v) return;
+
+  const q = changelogSearch.toLowerCase().trim();
+  const filtered = (v.items || []).filter(item => {
+    const matchType = changelogFilter === 'all' || item.type === changelogFilter;
+    const matchSearch = !q || item.title.toLowerCase().includes(q) || item.desc.toLowerCase().includes(q);
+    return matchType && matchSearch;
+  });
+
+  // Banner da versão selecionada
+  $('#cl-banner').innerHTML = `
+    <div class="b-title">${esc(v.version)} — ${esc(v.title)}</div>
+    <div class="b-meta">${esc(v.date)} · ${filtered.length} de ${v.items.length} itens</div>
+  `;
+
+  // Itens de alteração
+  if (!filtered.length) {
+    $('#cl-list').innerHTML = '<div class="cl-empty">Nenhuma alteração encontrada para este filtro ou busca.</div>';
+  } else {
+    $('#cl-list').innerHTML = filtered.map(item => `
+      <div class="cl-item">
+        <span class="cl-tag ${esc(item.type)}">${esc(item.type)}</span>
+        <div class="cl-item-body">
+          <div class="cl-item-title">${esc(item.title)}</div>
+          <div class="cl-item-desc">${esc(item.desc)}</div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // Atualizar botões de filtro
+  $('#cl-filters').querySelectorAll('.cl-filter').forEach(btn => {
+    btn.classList.toggle('on', btn.dataset.type === changelogFilter);
+  });
+}
+
+// Eventos da interface de changelog
+$('#cl-close').onclick = () => $('#changelog').classList.add('hidden');
+$('#changelog').onclick = e => { if (e.target === $('#changelog')) $('#changelog').classList.add('hidden'); };
+$('#cl-search').oninput = e => { changelogSearch = e.target.value; renderChangelogList(); };
+$('#cl-filters').querySelectorAll('.cl-filter').forEach(btn => {
+  btn.onclick = () => {
+    changelogFilter = btn.dataset.type;
+    renderChangelogList();
+  };
+});

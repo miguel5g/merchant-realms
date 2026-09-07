@@ -1,0 +1,122 @@
+/* ============================================================
+   Changelog.js — Histórico de versões e alterações do jogo
+   Compatível com Node.js (CommonJS) e navegador (root.Game)
+   ============================================================ */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) {
+    module.exports = factory();
+  } else {
+    root.Game = root.Game || {};
+    Object.assign(root.Game, factory());
+  }
+})(typeof self !== 'undefined' ? self : this, function () {
+
+  const CHANGELOG = [
+    {
+      version: 'v0.3.0',
+      date: '07 de Setembro de 2026',
+      title: 'Sistema de Perfil, Conquistas e Economia',
+      current: true,
+      items: [
+        {
+          type: 'novo',
+          title: 'Tela de Changelog Integrada',
+          desc: 'Adicionada interface para acompanhar todas as notas de atualização do jogo pelo menu ou pressionando [C].'
+        },
+        {
+          type: 'novo',
+          title: 'Sistema de Perfil e Conquistas',
+          desc: 'Acompanhe seu nível, horas jogadas, recursos minerados, blocos colocados e desbloqueie 11 conquistas com títulos exclusivos.'
+        },
+        {
+          type: 'novo',
+          title: 'Reputação Comercial e Parceiros Frequentes',
+          desc: 'Registro de trocas concluídas, cancelamentos e índice de confiabilidade entre negociantes.'
+        },
+        {
+          type: 'novo',
+          title: 'Customização de Cores do Personagem',
+          desc: 'Escolha a cor do seu personagem na paleta disponível diretamente na tela de perfil [P].'
+        },
+        {
+          type: 'melhoria',
+          title: 'Minimapa com Marcadores de Jogadores',
+          desc: 'O minimapa agora exibe outros jogadores com suas respectivas cores em tempo real.'
+        },
+        {
+          type: 'balanceamento',
+          title: 'Recompensa Diária de Moedas',
+          desc: 'Cada jogador online recebe 10 coroas a cada novo amanhecer no mundo.'
+        }
+      ]
+    },
+    {
+      version: 'v0.2.0',
+      date: '05 de Setembro de 2026',
+      title: 'Multiplayer, Comércio e Fabricação',
+      items: [
+        {
+          type: 'novo',
+          title: 'Sistema de Comércio Seguro (P2P)',
+          desc: 'Negocie itens e moedas com jogadores próximos (até 5 tiles) com interface de confirmação dupla.'
+        },
+        {
+          type: 'novo',
+          title: 'Chat Dividido em Canais',
+          desc: 'Comunicação organizada em Global, Local (raio de 20 tiles), Comércio e Sussurro privativo (/w).'
+        },
+        {
+          type: 'novo',
+          title: 'Sistema de Perícias (Skills)',
+          desc: 'Evolua perícias de Mineração, Lenhador, Construção, Comércio e Exploração conforme joga.'
+        },
+        {
+          type: 'novo',
+          title: 'Novos Itens e Construções',
+          desc: 'Criação de baús, bancadas de trabalho, muros de pedra e placas metálicas.'
+        },
+        {
+          type: 'melhoria',
+          title: 'Ciclo Dia e Noite com Iluminação Dinâmica',
+          desc: 'Duração de 10 minutos por dia de jogo, transição suave de iluminação e relógio no HUD.'
+        },
+        {
+          type: 'correcao',
+          title: 'Sincronização de Chunks e Posição',
+          desc: 'Interpolação de movimento de outros jogadores para eliminar saltos visuais.'
+        }
+      ]
+    },
+    {
+      version: 'v0.1.0',
+      date: '01 de Setembro de 2026',
+      title: 'Fundação do Protótipo & Mundo Procedural',
+      items: [
+        {
+          type: 'novo',
+          title: 'Geração Procedural com Ruído Perlin',
+          desc: 'Mundo infinito dividido em chunks com biomas de água, areia, grama e depósitos de pedra.'
+        },
+        {
+          type: 'novo',
+          title: 'Mineração e Coleta de Recursos',
+          desc: 'Extração de madeira em árvores e minérios de pedra, ferro e cobre com tempo de extração.'
+        },
+        {
+          type: 'novo',
+          title: 'Inventário e Hotbar',
+          desc: '32 slots de inventário com 8 slots de acesso rápido (hotbar) e suporte a divisão de pilhas.'
+        },
+        {
+          type: 'novo',
+          title: 'Servidor WebSocket e Multi-instância',
+          desc: 'Arquitetura Fastify com suporte a múltiplos servidores via lista PEERS e persistência automática.'
+        }
+      ]
+    }
+  ];
+
+  return {
+    CHANGELOG
+  };
+});
