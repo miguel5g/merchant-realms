@@ -7,7 +7,7 @@ import { $, hideTip } from './utils.js';
 import { send } from './network.js';
 import { uiOpen, typing } from './ui/windows.js';
 import { worldTooltip, hideWorldTooltip } from './ui/hud.js';
-import { handleMovement, handleMining, mouseTile, inReach, selectedItem, overlapsPlayer } from './input.js';
+import { handleMovement, handleMining, harvestable, genStock, mouseTile, inReach, selectedItem, overlapsPlayer } from './input.js';
 
 let COL = null;
 let MMCOL = null;
@@ -33,7 +33,7 @@ function initPalette() {
     [T.COPPER]: '#c77a4a',
     [T.WALL]: '#c9b79c',
     [T.CHEST]: '#966432',
-    [T.BENCH]: '#7a5230'
+    [T.MADEIREIRA]: '#6b4a2f'
   };
 }
 
@@ -205,14 +205,21 @@ export function drawTile(g, t, px, py, wx, wy) {
     g.rect(px + 6, py + 8, TILE - 12, 8);
     g.fill(210, 180, 80);
     g.rect(px + c - 2, py + 13, 4, 6);
-  } else if (t === T.BENCH) {
-    g.fill(122, 82, 48);
-    g.rect(px + 3, py + 8, TILE - 6, 10);
-    g.fill(80, 52, 28);
-    g.rect(px + 5, py + 18, 4, 10);
-    g.rect(px + TILE - 9, py + 18, 4, 10);
-    g.fill(172, 176, 186);
-    g.rect(px + 10, py + 4, 8, 4);
+  } else if (t === T.MADEIREIRA) {
+    // Madeireira: telhado, pilha de toras e serra
+    g.fill(74, 50, 30);
+    g.rect(px + 3, py + 10, TILE - 6, TILE - 13);
+    g.fill(107, 74, 47);
+    g.rect(px + 5, py + 12, TILE - 10, TILE - 17);
+    g.fill(139, 94, 52);
+    g.rect(px + 2, py + 5, TILE - 4, 6);
+    g.fill(74, 50, 30);
+    g.circle(px + 10, py + 22, 7);
+    g.circle(px + 18, py + 22, 7);
+    g.fill(196, 198, 206);
+    g.circle(px + c + 3, py + 15, 9);
+    g.fill(107, 74, 47);
+    g.circle(px + c + 3, py + 15, 3);
   }
 }
 
@@ -239,7 +246,9 @@ export function drawCursor() {
   const [tx, ty] = mouseTile();
   const t = state.world.tile(tx, ty);
   const item = selectedItem();
-  const canMine = inReach(tx, ty) && !!Game.RES[t];
+  const res = harvestable(tx, ty);
+  const stock = genStock(tx, ty);
+  const canMine = inReach(tx, ty) && !!res && !(stock !== null && stock <= 0);
   const canPlace = inReach(tx, ty) && item && Game.ITEMS[item]?.place && state.world.placeable(tx, ty) && !overlapsPlayer(tx, ty);
 
   noFill();
@@ -253,7 +262,7 @@ export function drawCursor() {
     rect(tx * TILE + 3, ty * TILE + 3, TILE - 6, TILE - 6);
   }
 
-  if (state.mining.t0 && state.mining.x === tx && state.mining.y === ty && Game.RES[t]) {
+  if (state.mining.t0 && state.mining.x === tx && state.mining.y === ty && res && canMine) {
     stroke(242, 199, 107);
     strokeWeight(3);
     noFill();
@@ -263,7 +272,7 @@ export function drawCursor() {
       24,
       24,
       -HALF_PI,
-      -HALF_PI + TWO_PI * Math.min(1, (millis() - state.mining.t0) / Game.mineTime(Game.RES[t], state.player.equip))
+      -HALF_PI + TWO_PI * Math.min(1, (millis() - state.mining.t0) / Game.mineTime(res, state.player.equip))
     );
   }
   noStroke();

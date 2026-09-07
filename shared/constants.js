@@ -32,7 +32,7 @@
     COPPER: 13,
     WALL: 20,
     CHEST: 21,
-    BENCH: 22,
+    MADEIREIRA: 23,
   };
 
   const PALETTE = ['#f2c76b', '#8cbe78', '#e0925c', '#b48ce0', '#5a8fd0', '#d26e64'];
@@ -47,7 +47,6 @@
     engrenagem:         { label:'Engrenagem',          desc:'Peça mecânica feita de placas de ferro.',                col:'#acb0ba', value:12 },
     muro:               { label:'Muro de pedra',       desc:'Bloqueia passagem. Botão esquerdo para colocar.',        col:'#c9b79c', value:3, place:T.WALL },
     baú:                { label:'Baú',                 desc:'Decorativo por enquanto. Botão esquerdo para colocar.',  col:'#966432', value:8, place:T.CHEST },
-    bancada:            { label:'Bancada de trabalho', desc:'Decorativa por enquanto. Botão esquerdo para colocar.',  col:'#7a5230', value:14, place:T.BENCH },
     'picareta de pedra':{ label:'Picareta de pedra',   desc:'Minera rochas e minérios mais rápido. Gasta com o uso.', col:'#b0b0aa', value:6, tool:'pick', dur:120 },
     'machado de pedra': { label:'Machado de pedra',    desc:'Corta árvores mais rápido. Gasta com o uso.',            col:'#a67a4a', value:5, tool:'axe',  dur:120 },
   };
@@ -62,10 +61,9 @@
     [T.COPPER]: { name:'Minério de cobre',    item:'cobre',   amount:12, time:530, tool:'pick', skill:'ore' },
     [T.WALL]:   { name:'Muro de pedra',       item:'muro',    amount:1,  time:130, built:true },
     [T.CHEST]:  { name:'Baú',                 item:'baú',     amount:1,  time:130, built:true },
-    [T.BENCH]:  { name:'Bancada de trabalho', item:'bancada', amount:1,  time:130, built:true },
   };
 
-  const RECIPE_CATS = [['basico', 'Básico'], ['metais', 'Metais'], ['construcao', 'Construção']];
+  const RECIPE_CATS = [['basico', 'Básico'], ['metais', 'Metais'], ['construcao', 'Construção'], ['blueprints', 'Blueprints']];
 
   const RECIPES = [
     { out:'picareta de pedra', n:1, cat:'basico',     needs:{ madeira:2, pedra:3 } },
@@ -75,8 +73,49 @@
     { out:'engrenagem',        n:1, cat:'metais',     needs:{ 'placa de ferro':2 } },
     { out:'muro',              n:1, cat:'construcao', needs:{ pedra:2 } },
     { out:'baú',               n:1, cat:'construcao', needs:{ madeira:6 } },
-    { out:'bancada',           n:1, cat:'construcao', needs:{ madeira:8, pedra:4 } },
   ];
+
+
+  /* ---------- Blueprints e estruturas geradoras ----------
+     Cada entrada aqui gera automaticamente: o item de blueprint (ITEMS),
+     a receita comprada com coroas (RECIPES, categoria "blueprints") e a
+     estrutura colocável no mundo (RES). Para criar um novo blueprint basta
+     acrescentar uma entrada abaixo com tile, item, n, interval e cap. */
+  const GENERATORS = {
+    madeireira: {
+      tile:     T.MADEIREIRA,
+      label:    'Madeireira',
+      item:     'madeira',   // recurso produzido
+      n:        1,           // unidades produzidas por ciclo
+      interval: 15000,       // milissegundos entre ciclos
+      cap:      24,          // estoque máximo acumulado na estrutura
+      time:     260,         // ms por unidade ao recolher
+      cost:     120,         // preço em coroas
+      col:      '#6b4a2f',
+      desc:     'Corta madeira sozinha. Produz 1 madeira a cada 15s e guarda até 24.',
+    },
+  };
+
+  const GEN_BY_TILE = {};
+  for (const [key, g] of Object.entries(GENERATORS)) {
+    g.key = key;
+    g.blueprint = `blueprint ${key}`;
+    GEN_BY_TILE[g.tile] = g;
+
+    ITEMS[g.blueprint] = {
+      label: `Blueprint: ${g.label}`,
+      desc:  `${g.desc} Uso único: o blueprint some ao ser colocado.`,
+      col:   '#5a8fd0',
+      value: g.cost,
+      place: g.tile,
+      blueprint: key,
+    };
+    RES[g.tile] = { name:g.label, item:g.item, amount:0, time:g.time, built:true, gen:key, cap:g.cap };
+    RECIPES.push({ out:g.blueprint, n:1, cat:'blueprints', needs:{}, coins:g.cost });
+  }
+
+  // Ids de tile válidos — usado ao carregar mundos antigos (descarta tiles removidos do jogo)
+  const TILE_IDS = new Set(Object.values(T));
 
   const XP = { mine:2, craft:3, build:1, trade:10 };
 
@@ -150,6 +189,9 @@
     RES,
     RECIPE_CATS,
     RECIPES,
+    GENERATORS,
+    GEN_BY_TILE,
+    TILE_IDS,
     XP,
     SKILLS,
     ACHIEVEMENTS,

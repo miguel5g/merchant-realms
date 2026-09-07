@@ -11,7 +11,7 @@
     Object.assign(root.Game, factory(root.Game));
   }
 })(typeof self !== 'undefined' ? self : this, function (deps) {
-  const { TILE, REACH, TOOL_SPEED, T, RES, makeNoise, PerlinNoise } = deps;
+  const { TILE, REACH, TOOL_SPEED, T, RES, TILE_IDS, makeNoise, PerlinNoise } = deps;
 
   class World {
     constructor(seed = 1337) {
@@ -78,11 +78,27 @@
 
     mine(x, y) {
       const t = this.tile(x, y);
-      if (!RES[t]) return null;
+      const res = RES[t];
+      if (!res) return null;
       const left = this.amount(x, y) - 1;
+      // Estruturas geradoras não somem ao esvaziar: só rendem o que já produziram.
+      if (res.gen) {
+        if (left < 0) return null;
+        this.amounts.set(this.key(x, y), left);
+        return res.item;
+      }
       this.amounts.set(this.key(x, y), left);
       if (left <= 0) this.set(x, y, this.groundUnder(x, y));
-      return RES[t].item;
+      return res.item;
+    }
+
+    // Tiles de estruturas geradoras já colocadas no mundo: [x, y, tile]
+    generators() {
+      const out = [];
+      for (const [k, t] of this.overrides) {
+        if (RES[t] && RES[t].gen) out.push([...k.split(',').map(Number), t]);
+      }
+      return out;
     }
 
     walkable(x, y) {
@@ -131,8 +147,13 @@
 
     load(snap) {
       if (!snap) return;
-      for (const [x, y, t] of snap.overrides || []) this.overrides.set(this.key(x, y), t);
-      for (const [x, y, n] of snap.amounts || []) this.amounts.set(this.key(x, y), n);
+      for (const [x, y, t] of snap.overrides || []) {
+        if (TILE_IDS && !TILE_IDS.has(t)) continue;   // tile removido do jogo: volta ao terreno original
+        this.overrides.set(this.key(x, y), t);
+      }
+      for (const [x, y, n] of snap.amounts || []) {
+        if (this.overrides.has(this.key(x, y)) || RES[this.baseTile(x, y)]) this.amounts.set(this.key(x, y), n);
+      }
     }
 
     static dist(ax, ay, bx, by) {

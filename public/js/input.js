@@ -86,10 +86,29 @@ export function tileOverlapsAnyPlayer(tx, ty) {
   return false;
 }
 
+// Recurso extraível sob o cursor.
+export function harvestable(tx, ty) {
+  if (!state.world) return null;
+  return Game.RES[state.world.tile(tx, ty)] || null;
+}
+
+// Estoque de uma estrutura geradora segundo o cliente — null se não for geradora.
+// É só um cache do que o servidor mandou: quem manda no estoque real é o servidor.
+export function genStock(tx, ty) {
+  if (!state.world) return null;
+  const res = Game.RES[state.world.tile(tx, ty)];
+  return res && res.gen ? state.world.amount(tx, ty) : null;
+}
+
+// Sonda de re-sincronia: se o cliente acha que a estrutura está vazia, ainda
+// tentamos recolher uma vez por segundo. Se o servidor tiver estoque, ele
+// responde com a quantidade real e a coleta destrava sozinha.
+const RESYNC_MS = 1000;
+
 export function handleMining() {
   if (!state.world) return;
   const [tx, ty] = mouseTile();
-  const res = Game.RES[state.world.tile(tx, ty)];
+  const res = harvestable(tx, ty);
   if (!mouseIsPressed || mouseButton !== RIGHT || overUI() || !inReach(tx, ty) || !res || !state.player.inv.hasSpace(res.item) || state.player.energy < 1) {
     state.mining.t0 = 0;
     return;
@@ -99,7 +118,9 @@ export function handleMining() {
     state.mining.y = ty;
     state.mining.t0 = millis();
   }
-  if (millis() - state.mining.t0 >= Game.mineTime(res, state.player.equip)) {
+  const stock = genStock(tx, ty);
+  const delay = stock !== null && stock <= 0 ? RESYNC_MS : Game.mineTime(res, state.player.equip);
+  if (millis() - state.mining.t0 >= delay) {
     send('mine', { x: tx, y: ty });
     state.mining.t0 = millis();
   }

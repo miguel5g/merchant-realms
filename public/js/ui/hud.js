@@ -65,6 +65,7 @@ export function worldTooltip() {
   const res = Game.RES[t];
   if (!res) return hideWorldTooltip();
 
+  const gen = res.gen ? Game.GENERATORS[res.gen] : null;
   const amt = state.world.amount(tx, ty);
   const ms = Game.mineTime(res, state.player.equip);
   const reach = inReach(tx, ty);
@@ -91,6 +92,8 @@ export function worldTooltip() {
   let alertHTML = '';
   if (!reach) {
     alertHTML = '<div class="insp-alert warn">fora de alcance</div>';
+  } else if (gen && amt <= 0) {
+    alertHTML = '<div class="insp-alert warn">produzindo — nada para recolher ainda</div>';
   } else if (!hasSp) {
     alertHTML = '<div class="insp-alert err">inventário cheio</div>';
   } else if (en < 1) {
@@ -98,7 +101,17 @@ export function worldTooltip() {
   }
 
   let bodyHTML = '';
-  if (res.built) {
+  if (gen) {
+    const pctGen = Math.min(100, Math.max(0, Math.round((amt / gen.cap) * 100)));
+    const every = (gen.interval / 1000).toFixed(0);
+    bodyHTML = `
+      <div class="insp-row"><span>Produz</span><span class="val">${gen.n} ${esc(itemName)} / ${every}s</span></div>
+      <div class="insp-row"><span>Estoque</span><span class="val">${amt} / ${gen.cap}</span></div>
+      <div class="insp-bar"><div class="fill" style="width:${pctGen}%"></div></div>
+      <div class="insp-row"><span class="insp-tag">${amt > 0 ? 'segure botão direito para recolher' : 'aguarde a produção'}</span></div>
+      ${alertHTML}
+    `;
+  } else if (res.built) {
     bodyHTML = `
       <div class="insp-row"><span class="val">botão direito para quebrar</span></div>
       <div class="insp-row"><span>Tempo</span><span class="val">${timeSec}s</span></div>
@@ -120,7 +133,7 @@ export function worldTooltip() {
       ${iconHTML(res.item)}
       <div class="insp-title">
         <div class="insp-name">${esc(res.name)}</div>
-        <div class="insp-type">${res.built ? 'construção' : 'recurso natural'}</div>
+        <div class="insp-type">${gen ? 'estrutura de blueprint' : res.built ? 'construção' : 'recurso natural'}</div>
       </div>
     </div>
     <div class="insp-body">

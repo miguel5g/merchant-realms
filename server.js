@@ -24,6 +24,9 @@ if (fs.existsSync(WORLD_FILE)) {
   world.load(snap); if (snap.epoch) epoch = snap.epoch;
   console.log(`mundo carregado: ${world.overrides.size} tiles alterados, dia ${G.gameTime(Date.now(), epoch).day}`);
 }
+const genNext = new Map();      // "x,y" -> timestamp do próximo ciclo de produção
+for (const [x, y] of world.generators()) armGenerator(x, y);
+
 const profiles = fs.existsSync(PLAYERS_FILE) ? JSON.parse(fs.readFileSync(PLAYERS_FILE, 'utf8')) : {};
 let dirty = false;
 const players = new Map();      // id -> player online
@@ -51,6 +54,29 @@ function checkAchievements(p) {
   p.ach = have;
 }
 function touch(p) { checkAchievements(p); sendMe(p); dirty = true; }
+
+/* ---------- estruturas geradoras (blueprints) ---------- */
+function genDef(x, y) { return G.GEN_BY_TILE[world.tile(x, y)] || null; }
+function armGenerator(x, y) {
+  const def = genDef(x, y);
+  if (def) genNext.set(`${x},${y}`, Date.now() + def.interval);
+  else genNext.delete(`${x},${y}`);
+}
+function tickGenerators() {
+  const nowMs = Date.now();
+  for (const [k, at] of genNext) {
+    const [x, y] = k.split(',').map(Number);
+    const def = genDef(x, y);
+    if (!def) { genNext.delete(k); continue; }     // estrutura removida
+    if (nowMs < at) continue;
+    genNext.set(k, nowMs + def.interval);
+    const stock = world.amount(x, y);
+    if (stock >= def.cap) continue;                // cheia: espera ser recolhida
+    world.setAmount(x, y, Math.min(def.cap, stock + def.n));
+    broadcast('tile', tileMsg(x, y));
+    dirty = true;
+  }
+}
 
 /* ---------- comércio ---------- */
 function tradeOf(p) { return p.tradeId ? trades.get(p.tradeId) : null; }
@@ -116,7 +142,9 @@ const handlers = {
     if (nowMs - p.lastMine < G.mineTime(res, p.equip) * 0.8) return;
     p.lastMine = nowMs;
     const item = world.mine(x, y);
-    if (!item) return;
+    // Estrutura geradora sem estoque: devolve o estado real para o cliente
+    // re-sincronizar (o cache local dele pode estar defasado).
+    if (!item) { if (res.gen) send(p, 'tile', tileMsg(x, y)); return; }
     p.inv.add(item, 1); p.energy -= 1;
     const tool = res.tool && p.equip[res.tool];
     if (tool && --tool.dur <= 0) { p.equip[res.tool] = null; sys(`Sua ${G.ITEMS[tool.item].label.toLowerCase()} quebrou.`, p); }
@@ -138,6 +166,7 @@ const handlers = {
     const taken = p.inv.take(p.sel, 1);
     if (!taken) return sendInv(p);
     world.set(x, y, G.ITEMS[taken.item].place);
+    armGenerator(x, y);
     p.stats.built++; gainXp(p, G.XP.build);
     broadcast('tile', tileMsg(x, y));
     sendInv(p); touch(p);
@@ -145,7 +174,7 @@ const handlers = {
   craft(p, m) {
     const r = G.RECIPES[m.k]; if (!r) return;
     let n = Math.min(Math.max(1, m.n | 0), 100), done = 0;
-    while (n-- > 0 && G.craft(p.inv, r)) done++;
+    while (n-- > 0 && G.craft(p.inv, r, p.coins)) { done++; p.coins -= r.coins || 0; }
     if (done) { p.stats.crafted += done; gainXp(p, G.XP.craft * done); sendInv(p); touch(p); }
   },
   swap(p, m) {
@@ -306,6 +335,7 @@ setInterval(() => {
   }
   // trocas cancelam se alguém se afastar
   for (const t of [...trades.values()]) if (G.dist(t.a.x, t.a.y, t.b.x, t.b.y) > G.TRADE_DIST + G.TILE) endTrade(t, 'far', null);
+  tickGenerators();
   broadcast('time', { day:tm.day, min:tm.min });
   if (tm.day !== lastDay) {
     lastDay = tm.day;

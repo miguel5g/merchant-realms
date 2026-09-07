@@ -6,7 +6,7 @@ import { state } from './state.js';
 import { $, toast } from './utils.js';
 import { invalidateChunkAt } from './renderer.js';
 import { renderStatus, renderHotbar } from './ui/hud.js';
-import { renderInventory } from './ui/inventory.js';
+import { renderInventory, renderCrafting } from './ui/inventory.js';
 import { openTrade, renderTradeInv } from './ui/trade.js';
 import { renderChat, renderPlayers, pushChat } from './ui/chat.js';
 import { renderProfile } from './ui/profile.js';
@@ -171,6 +171,7 @@ export function onMessage(m) {
       renderStatus();
       if (!$('#profile')?.classList.contains('hidden')) renderProfile();
       if ($('#inv-coins')) $('#inv-coins').textContent = state.player.coins;
+      if (!$('#inv')?.classList.contains('hidden')) renderCrafting();   // coroas mudaram: atualiza blueprints
       if ($('#tr-mymax')) $('#tr-mymax').textContent = 'de ' + state.player.coins;
       break;
 

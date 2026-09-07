@@ -1,5 +1,5 @@
 /* ============================================================
-   ui/inventory.js — Inventário, equipamentos e bancada de fabricação.
+   ui/inventory.js — Inventário, equipamentos, fabricação e blueprints.
    ============================================================ */
 
 import { state } from '../state.js';
@@ -98,7 +98,7 @@ export function renderCrafting() {
   const recipesEl = $('#recipes');
   if (recipesEl) {
     recipesEl.innerHTML = list.map(({ r, k }) => {
-      const n = Game.craftableCount(state.player.inv, r);
+      const n = Game.craftableCount(state.player.inv, r, state.player.coins);
       return `<button class="rcp ${k === state.craftSel ? 'on' : ''} ${n ? '' : 'no'}" data-k="${k}" data-tip="${esc(Game.ITEMS[r.out].label)}">${iconHTML(r.out)}<span class="name">${esc(Game.ITEMS[r.out].label)}</span><span class="cnt">×${n}</span></button>`;
     }).join('');
 
@@ -125,17 +125,33 @@ export function renderCrafting() {
       return;
     }
 
-    const n = Game.craftableCount(state.player.inv, r);
-    const needsHTML = Object.entries(r.needs).map(([it, q]) => {
-      const has = state.player.inv.count(it);
-      const ok = has >= q;
-      return `<div class="row"><span>${esc(Game.ITEMS[it].label)}</span><span><span class="${ok ? 'green' : 'red'}">${has}</span> / ${q}</span></div>`;
-    }).join('');
+    const n = Game.craftableCount(state.player.inv, r, state.player.coins);
+    const gen = Game.GENERATORS?.[Game.ITEMS[r.out].blueprint];
+
+    let costHTML;
+    if (r.coins) {
+      // Blueprints: compra em coroas, sem materiais
+      const ok = state.player.coins >= r.coins;
+      costHTML = `<div class="row dim" style="font-size:15px"><span>Custo</span><span>possui / exige</span></div>`
+        + `<div class="row"><span><i class="coin"></i>Coroas</span><span><span class="${ok ? 'green' : 'red'}">${state.player.coins}</span> / ${r.coins}</span></div>`;
+      if (gen) {
+        costHTML += `<div class="row dim"><span>Produz</span><span>${gen.n} ${esc(Game.ITEMS[gen.item].label.toLowerCase())} / ${(gen.interval / 1000).toFixed(0)}s</span></div>`
+          + `<div class="row dim"><span>Estoque máximo</span><span>${gen.cap}</span></div>`;
+      }
+      costHTML += `<div class="row dim"><span>Uso</span><span>único — some ao colocar</span></div>`;
+    } else {
+      costHTML = `<div class="row dim" style="font-size:15px"><span>Materiais necessários</span><span>possui / exige</span></div>`
+        + Object.entries(r.needs).map(([it, q]) => {
+            const has = state.player.inv.count(it);
+            const ok = has >= q;
+            return `<div class="row"><span>${esc(Game.ITEMS[it].label)}</span><span><span class="${ok ? 'green' : 'red'}">${has}</span> / ${q}</span></div>`;
+          }).join('')
+        + `<div class="row dim"><span>Valor</span><span>${Game.ITEMS[r.out].value} coroas</span></div>`;
+    }
 
     rdetail.innerHTML = `<div class="big">${iconHTML(r.out)}</div><div class="px gold" style="font-size:18px;text-align:center">${esc(Game.ITEMS[r.out].label)}</div><div class="desc">${esc(Game.ITEMS[r.out].desc)}</div><div class="rule"></div>`
-      + `<div class="row dim" style="font-size:15px"><span>Materiais necessários</span><span>possui / exige</span></div>`
-      + needsHTML
-      + `<div class="row dim"><span>Valor</span><span>${Game.ITEMS[r.out].value} coroas</span></div><div class="buttons"><button class="btn primary" id="cr1" ${n ? '' : 'disabled'}>Fabricar ×1</button><button class="btn" id="cr10" ${n ? '' : 'disabled'}>×10</button></div>`;
+      + costHTML
+      + `<div class="buttons"><button class="btn primary" id="cr1" ${n ? '' : 'disabled'}>${r.coins ? 'Comprar ×1' : 'Fabricar ×1'}</button><button class="btn" id="cr10" ${n ? '' : 'disabled'}>×10</button></div>`;
 
     $('#cr1')?.addEventListener('click', e => doCraft(e.shiftKey ? 100 : 1));
     $('#cr10')?.addEventListener('click', e => doCraft(e.shiftKey ? 100 : 10));
