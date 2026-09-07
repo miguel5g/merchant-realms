@@ -23,7 +23,7 @@ export function renderChangelog() {
   const cur = list[0];
 
   const topBadge = $('#cl-badge-top');
-  if (topBadge) topBadge.textContent = cur ? cur.version : 'v0.4.0';
+  if (topBadge) topBadge.textContent = cur ? cur.version : 'v0.5.0';
 
   const clVersions = $('#cl-versions');
   if (clVersions) {

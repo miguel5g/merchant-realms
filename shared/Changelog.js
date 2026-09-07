@@ -13,10 +13,47 @@
 
   const CHANGELOG = [
     {
+      version: 'v0.5.0',
+      date: '07 de Setembro de 2026',
+      title: 'Blueprints e Estruturas Geradoras',
+      current: true,
+      items: [
+        {
+          type: 'novo',
+          title: 'Categoria Blueprints na Fabricação',
+          desc: 'Nova aba Blueprints ao lado de Básico, Metais e Construção. Blueprints são comprados apenas com coroas e não consomem nenhum material: o painel de detalhes troca a lista de materiais por custo em coroas, produção da estrutura e estoque máximo, e o botão passa a ser "Comprar ×1". A contagem ×N na lista mostra quantos o jogador consegue pagar com as coroas que tem.'
+        },
+        {
+          type: 'novo',
+          title: 'Madeireira: primeira estrutura geradora',
+          desc: 'Blueprint da Madeireira por 120 coroas, de uso único: ao ser colocada no mundo (botão esquerdo), o blueprint é consumido e vira uma estrutura fixa que produz 1 madeira a cada 15 segundos, acumulando até 24 unidades. O recurso fica guardado na estrutura até ser recolhido (segure o botão direito, como em qualquer recurso) e, diferente de árvores e rochas, ela não é destruída ao esvaziar: continua de pé e volta a produzir. A produção é salva no mundo e retomada quando o servidor reinicia.'
+        },
+        {
+          type: 'melhoria',
+          title: 'Painel de Inspeção Reconhece Estruturas Geradoras',
+          desc: 'Ao mirar uma madeireira, o painel abaixo do minimapa mostra taxa de produção, estoque atual sobre o máximo, barra de progresso e o aviso "produzindo — nada para recolher ainda" quando ela está vazia. O realce amarelo do cursor não aparece mais sobre uma estrutura sem estoque.'
+        },
+        {
+          type: 'melhoria',
+          title: 'Bancada de Trabalho Removida do Jogo',
+          desc: 'A bancada de trabalho foi removida por completo: receita, item de inventário, entidade colocável, arte no mundo/minimapa e a única instância que existia no mapa. A fabricação nunca exigiu estação — nenhuma outra receita tinha a bancada como pré-requisito — e agora isso está explícito na interface ("na mão · sem estação"). Mundos salvos antes da mudança descartam a bancada ao carregar e o terreno original volta no lugar.'
+        },
+        {
+          type: 'correcao',
+          title: 'Coleta Travada com Estoque Defasado no Cliente',
+          desc: 'A coleta dependia do estoque em cache no cliente: se o navegador perdesse as atualizações da estrutura (página aberta durante um reinício do servidor, pacote não aplicado, sessão antiga), ele achava que a madeireira estava vazia e bloqueava o envio da coleta, sem nenhuma mensagem de erro. Agora o servidor é a autoridade sobre o estoque — o cliente tenta recolher uma vez por segundo mesmo achando que está vazio, e o servidor devolve o estado real do tile quando a coleta não rende nada, então o cliente se corrige sozinho.'
+        },
+        {
+          type: 'correcao',
+          title: 'Janelas de Troca e Fabricação com Conteúdo Vazando',
+          desc: 'Na troca, o grid do inventário tinha largura fixa maior que a coluna que o continha e gerava rolagem horizontal e vertical; agora os slots são elásticos e as 4 linhas aparecem inteiras, de 900×560 até 1920×1080. Na fabricação, o painel de detalhes de um blueprint escorria para fora da borda (dica de Shift+clique, total de coroas e linha "Uso · único"); o conteúdo passou a ficar contido, com os botões Comprar/×10 fixos no rodapé. As duas janelas ficaram um pouco maiores, as abas de categoria quebram linha quando não cabem e nomes longos de receita quebram em duas linhas em vez de serem cortados.'
+        }
+      ]
+    },
+    {
       version: 'v0.4.0',
       date: '07 de Setembro de 2026',
       title: 'Controles e Interação com o Mundo',
-      current: true,
       items: [
         {
           type: 'melhoria',
