@@ -127,11 +127,17 @@ const handlers = {
   },
   place(p, m) {
     const { x, y } = m, s = p.inv.slots[p.sel];
-    if (!s || !G.ITEMS[s.item]?.place) return;
-    if (!Number.isInteger(x) || !Number.isInteger(y) || !G.inReach(p.x, p.y, x, y) || !world.placeable(x, y)) return;
-    for (const o of players.values()) if (Math.floor(o.x / G.TILE) === x && Math.floor(o.y / G.TILE) === y) return;
-    p.inv.remove(s.item, 1);
-    world.set(x, y, G.ITEMS[s.item].place);
+    if (!s || !G.ITEMS[s.item]?.place) return sendInv(p);
+    if (!Number.isInteger(x) || !Number.isInteger(y) || !G.inReach(p.x, p.y, x, y) || !world.placeable(x, y)) return sendInv(p);
+    const pr = 9;
+    for (const o of players.values()) {
+      if (o.x + pr > x * G.TILE && o.x - pr < (x + 1) * G.TILE && o.y + pr > y * G.TILE && o.y - pr < (y + 1) * G.TILE) {
+        return sendInv(p);
+      }
+    }
+    const taken = p.inv.take(p.sel, 1);
+    if (!taken) return sendInv(p);
+    world.set(x, y, G.ITEMS[taken.item].place);
     p.stats.built++; gainXp(p, G.XP.build);
     broadcast('tile', tileMsg(x, y));
     sendInv(p); touch(p);

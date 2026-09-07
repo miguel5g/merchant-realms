@@ -45,9 +45,9 @@
     'placa de ferro':   { label:'Placa de ferro',      desc:'Componente básico de máquinas.',                         col:'#c4c6ce', value:5 },
     'placa de cobre':   { label:'Placa de cobre',      desc:'Componente de fiação e circuitos.',                      col:'#e0925c', value:5 },
     engrenagem:         { label:'Engrenagem',          desc:'Peça mecânica feita de placas de ferro.',                col:'#acb0ba', value:12 },
-    muro:               { label:'Muro de pedra',       desc:'Bloqueia passagem. Botão direito para colocar.',         col:'#c9b79c', value:3, place:T.WALL },
-    baú:                { label:'Baú',                 desc:'Decorativo por enquanto. Botão direito para colocar.',   col:'#966432', value:8, place:T.CHEST },
-    bancada:            { label:'Bancada de trabalho', desc:'Decorativa por enquanto. Botão direito para colocar.',   col:'#7a5230', value:14, place:T.BENCH },
+    muro:               { label:'Muro de pedra',       desc:'Bloqueia passagem. Botão esquerdo para colocar.',        col:'#c9b79c', value:3, place:T.WALL },
+    baú:                { label:'Baú',                 desc:'Decorativo por enquanto. Botão esquerdo para colocar.',  col:'#966432', value:8, place:T.CHEST },
+    bancada:            { label:'Bancada de trabalho', desc:'Decorativa por enquanto. Botão esquerdo para colocar.',  col:'#7a5230', value:14, place:T.BENCH },
     'picareta de pedra':{ label:'Picareta de pedra',   desc:'Minera rochas e minérios mais rápido. Gasta com o uso.', col:'#b0b0aa', value:6, tool:'pick', dur:120 },
     'machado de pedra': { label:'Machado de pedra',    desc:'Corta árvores mais rápido. Gasta com o uso.',            col:'#a67a4a', value:5, tool:'axe',  dur:120 },
   };

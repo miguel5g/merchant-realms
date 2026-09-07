@@ -42,7 +42,7 @@ export function renderHotbar() {
   const hbLabel = $('#hb-label');
   if (hbLabel) {
     hbLabel.innerHTML = it
-      ? `${esc(Game.ITEMS[it].label)}${Game.ITEMS[it].place ? ' <span class="dim">· botão direito coloca</span>' : Game.ITEMS[it].tool ? ' <span class="dim">· equipe no inventário (E)</span>' : ''}`
+      ? `${esc(Game.ITEMS[it].label)}${Game.ITEMS[it].place ? ' <span class="dim">· botão esquerdo coloca</span>' : Game.ITEMS[it].tool ? ' <span class="dim">· equipe no inventário (E)</span>' : ''}`
       : '';
   }
 }
@@ -56,7 +56,7 @@ export function worldTooltip() {
 
   const lines = [res.name];
   if (res.built) {
-    lines.push('construção · minere para recolher');
+    lines.push('construção · botão direito para quebrar');
   } else {
     lines.push('dá: ' + Game.ITEMS[res.item].label.toLowerCase());
     lines.push(`restante: ${state.world.amount(tx, ty)} / ${res.amount}`);

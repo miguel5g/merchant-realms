@@ -7,6 +7,7 @@ import { $ } from './utils.js';
 import { send } from './network.js';
 import { uiOpen } from './ui/windows.js';
 import { renderHotbar } from './ui/hud.js';
+import { renderInventory } from './ui/inventory.js';
 
 const HOTBAR = 8;
 
@@ -48,7 +49,7 @@ export function inReach(tx, ty) {
 }
 
 export function selectedItem() {
-  if (!state.player.inv || !state.player.inv.slots) return null;
+  if (!state.player?.inv?.slots) return null;
   const s = state.player.inv.slots[state.player.sel];
   return s ? s.item : null;
 }
@@ -58,11 +59,38 @@ export function overUI() {
   return el && state.cnv && el !== state.cnv.elt;
 }
 
+export function overlapsPlayer(tx, ty, px = state.player?.x, py = state.player?.y, r = ((state.player?.r || 10) - 1)) {
+  if (typeof px !== 'number' || typeof py !== 'number' || !Game?.TILE) return false;
+  const TILE = Game.TILE;
+  const pMinX = px - r;
+  const pMaxX = px + r;
+  const pMinY = py - r;
+  const pMaxY = py + r;
+
+  const tMinX = tx * TILE;
+  const tMaxX = (tx + 1) * TILE;
+  const tMinY = ty * TILE;
+  const tMaxY = (ty + 1) * TILE;
+
+  return pMaxX > tMinX && pMinX < tMaxX && pMaxY > tMinY && pMinY < tMaxY;
+}
+
+export function tileOverlapsAnyPlayer(tx, ty) {
+  if (overlapsPlayer(tx, ty)) return true;
+  const r = 9;
+  if (state.others) {
+    for (const o of state.others.values()) {
+      if (overlapsPlayer(tx, ty, o.x, o.y, r)) return true;
+    }
+  }
+  return false;
+}
+
 export function handleMining() {
   if (!state.world) return;
   const [tx, ty] = mouseTile();
   const res = Game.RES[state.world.tile(tx, ty)];
-  if (!mouseIsPressed || mouseButton !== LEFT || overUI() || !inReach(tx, ty) || !res || !state.player.inv.hasSpace(res.item) || state.player.energy < 1) {
+  if (!mouseIsPressed || mouseButton !== RIGHT || overUI() || !inReach(tx, ty) || !res || !state.player.inv.hasSpace(res.item) || state.player.energy < 1) {
     state.mining.t0 = 0;
     return;
   }
@@ -77,16 +105,44 @@ export function handleMining() {
   }
 }
 
+export function handlePlacement() {
+  if (!state.world || !state.player?.inv) return;
+  const item = selectedItem();
+  if (!item) return;
+
+  const itemDef = Game.ITEMS?.[item];
+  if (!itemDef || !itemDef.place) return;
+
+  const [tx, ty] = mouseTile();
+  if (!Number.isInteger(tx) || !Number.isInteger(ty)) return;
+
+  // 1. Célula alvo livre
+  if (!state.world.placeable(tx, ty)) return;
+
+  // 2. Dentro do alcance do jogador
+  if (!inReach(tx, ty)) return;
+
+  // 3. Não sobrepõe o jogador (nem outros jogadores)
+  if (tileOverlapsAnyPlayer(tx, ty)) return;
+
+  // Se tudo válido, consome 1 unidade do slot e sincroniza
+  const taken = state.player.inv.take(state.player.sel, 1);
+  if (!taken) return;
+
+  renderHotbar();
+  renderInventory();
+  send('place', { x: tx, y: ty });
+}
+
 export function handleMousePressed(e) {
-  if (!state.inGame || uiOpen() || !e || (state.cnv && e.target !== state.cnv.elt)) return;
-  $('#ctx')?.classList.add('hidden');
-  if (mouseButton === RIGHT) {
-    const item = selectedItem();
-    if (!item || !Game.ITEMS[item].place) return;
-    const [tx, ty] = mouseTile();
-    if (inReach(tx, ty) && state.world.placeable(tx, ty)) {
-      send('place', { x: tx, y: ty });
-    }
+  if (!state.inGame || uiOpen() || overUI() || !e || (state.cnv && e.target !== state.cnv.elt)) return;
+  const ctx = $('#ctx');
+  if (ctx && !ctx.classList.contains('hidden')) {
+    ctx.classList.add('hidden');
+    return;
+  }
+  if (mouseButton === LEFT) {
+    handlePlacement();
   }
 }
 

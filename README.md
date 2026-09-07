@@ -54,7 +54,7 @@ Um dia de jogo dura 10 minutos reais; a cada dia novo cada jogador online recebe
 
 ## Controles
 
-WASD move · botão esquerdo minera (segure) · botão direito coloca o item selecionado
+WASD move · botão esquerdo coloca o item selecionado · botão direito quebra bloco/recurso (segure)
 1–8 ou scroll seleciona na hotbar · E inventário e fabricação · Enter chat · T jogadores · P perfil · Esc fecha
 
 Chat: `/w nome msg` sussurra, `/r msg` responde, `/l` local (20 tiles), `/t` comércio, `/g` global.

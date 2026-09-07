@@ -7,7 +7,7 @@ import { $, hideTip } from './utils.js';
 import { send } from './network.js';
 import { uiOpen, typing } from './ui/windows.js';
 import { worldTooltip } from './ui/hud.js';
-import { handleMovement, handleMining, mouseTile, inReach, selectedItem } from './input.js';
+import { handleMovement, handleMining, mouseTile, inReach, selectedItem, overlapsPlayer } from './input.js';
 
 let COL = null;
 let MMCOL = null;
@@ -239,7 +239,7 @@ export function drawCursor() {
   const t = state.world.tile(tx, ty);
   const item = selectedItem();
   const canMine = inReach(tx, ty) && !!Game.RES[t];
-  const canPlace = inReach(tx, ty) && item && Game.ITEMS[item].place && state.world.placeable(tx, ty);
+  const canPlace = inReach(tx, ty) && item && Game.ITEMS[item]?.place && state.world.placeable(tx, ty) && !overlapsPlayer(tx, ty);
 
   noFill();
   strokeWeight(2);
