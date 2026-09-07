@@ -3,7 +3,7 @@
    ============================================================ */
 
 import { state } from '../state.js';
-import { $, esc, slotHTML, showTip, hideTip } from '../utils.js';
+import { $, esc, slotHTML, iconHTML, showTip, hideTip } from '../utils.js';
 import { mouseTile, inReach, selectedItem, overUI, setSel } from '../input.js';
 
 const HOTBAR = 8;
@@ -47,33 +47,87 @@ export function renderHotbar() {
   }
 }
 
+export function hideWorldTooltip() {
+  const panel = $('#inspect-panel');
+  if (panel && !panel.classList.contains('hidden')) {
+    panel.classList.add('hidden');
+    panel.dataset.resKey = '';
+  }
+}
+
 export function worldTooltip() {
-  if (overUI() || !state.world) return;
+  const panel = $('#inspect-panel');
+  if (!panel) return;
+  if (overUI() || !state.world || !state.inGame) return hideWorldTooltip();
+
   const [tx, ty] = mouseTile();
   const t = state.world.tile(tx, ty);
   const res = Game.RES[t];
-  if (!res) return hideTip();
+  if (!res) return hideWorldTooltip();
 
-  const lines = [res.name];
-  if (res.built) {
-    lines.push('construção · botão direito para quebrar');
-  } else {
-    lines.push('dá: ' + Game.ITEMS[res.item].label.toLowerCase());
-    lines.push(`restante: ${state.world.amount(tx, ty)} / ${res.amount}`);
-  }
-
+  const amt = state.world.amount(tx, ty);
   const ms = Game.mineTime(res, state.player.equip);
-  lines.push(`${(ms / 1000).toFixed(1).replace('.', ',')}s por unidade${res.tool && state.player.equip[res.tool] ? ' (com ferramenta)' : res.tool ? ` · ${res.tool === 'axe' ? 'machado' : 'picareta'} acelera` : ''}`);
+  const reach = inReach(tx, ty);
+  const hasSp = state.player.inv.hasSpace(res.item);
+  const en = state.player.energy;
+  const hasTool = !!(res.tool && state.player.equip[res.tool]);
 
-  if (!inReach(tx, ty)) {
-    lines.push('fora de alcance');
-  } else if (!state.player.inv.hasSpace(res.item)) {
-    lines.push('inventário cheio');
-  } else if (state.player.energy < 1) {
-    lines.push('sem energia — descanse um pouco');
+  const stateKey = `${tx},${ty},${t},${amt},${reach},${hasSp},${en < 1},${hasTool}`;
+  if (panel.dataset.resKey === stateKey && !panel.classList.contains('hidden')) return;
+  panel.dataset.resKey = stateKey;
+
+  const itemInfo = Game.ITEMS[res.item];
+  const itemName = itemInfo ? itemInfo.label.toLowerCase() : '';
+  const timeSec = (ms / 1000).toFixed(1).replace('.', ',');
+  const pct = Math.min(100, Math.max(0, Math.round((amt / (res.amount || 1)) * 100)));
+
+  let toolText = '';
+  if (hasTool) {
+    toolText = '<span class="insp-tag ok">com ferramenta</span>';
+  } else if (res.tool) {
+    toolText = `<span class="insp-tag">${res.tool === 'axe' ? 'machado' : 'picareta'} acelera</span>`;
   }
 
-  showTip(lines.join('\n'), mouseX, mouseY);
+  let alertHTML = '';
+  if (!reach) {
+    alertHTML = '<div class="insp-alert warn">fora de alcance</div>';
+  } else if (!hasSp) {
+    alertHTML = '<div class="insp-alert err">inventário cheio</div>';
+  } else if (en < 1) {
+    alertHTML = '<div class="insp-alert err">sem energia — descanse um pouco</div>';
+  }
+
+  let bodyHTML = '';
+  if (res.built) {
+    bodyHTML = `
+      <div class="insp-row"><span class="val">botão direito para quebrar</span></div>
+      <div class="insp-row"><span>Tempo</span><span class="val">${timeSec}s</span></div>
+      ${alertHTML}
+    `;
+  } else {
+    bodyHTML = `
+      <div class="insp-row"><span>Dá</span><span class="val">${esc(itemName)}</span></div>
+      <div class="insp-row"><span>Restante</span><span class="val">${amt} / ${res.amount}</span></div>
+      <div class="insp-bar"><div class="fill" style="width:${pct}%"></div></div>
+      <div class="insp-row"><span>Tempo</span><span class="val">${timeSec}s / un</span></div>
+      ${toolText ? `<div class="insp-row">${toolText}</div>` : ''}
+      ${alertHTML}
+    `;
+  }
+
+  panel.innerHTML = `
+    <div class="insp-head">
+      ${iconHTML(res.item)}
+      <div class="insp-title">
+        <div class="insp-name">${esc(res.name)}</div>
+        <div class="insp-type">${res.built ? 'construção' : 'recurso natural'}</div>
+      </div>
+    </div>
+    <div class="insp-body">
+      ${bodyHTML}
+    </div>
+  `;
+  panel.classList.remove('hidden');
 }
 
 export function initTooltipListeners() {
@@ -110,5 +164,6 @@ export function initTooltipListeners() {
 
   document.addEventListener('mouseleave', () => {
     hideTip();
+    hideWorldTooltip();
   });
 }

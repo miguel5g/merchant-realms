@@ -31,3 +31,11 @@ Este documento reúne todas as alterações em desenvolvimento para a próxima v
   - **Painel de Detalhes Dinâmico**: Os materiais necessários (com quantidade exigida e quantidade que o jogador possui no formato `possui / exige` colorido em verde/vermelho) agora só são exibidos no painel de detalhes após um item ser selecionado na lista.
   - **Estado Inicial Claro**: Ao abrir a tela ou trocar de categoria sem item selecionado, o painel de detalhes exibe uma mensagem amigável instruindo o jogador a clicar em uma receita para ver requisitos e fabricar.
   - **Botões de Fabricação Integrados**: Mantidos os botões de fabricação (`Fabricar ×1` e `×10`, além de suporte a Shift+clique) no painel de detalhes.
+
+- **Painel Fixo de Inspeção de Recursos**:
+  - **Substituição do Tooltip Flutuante**: O antigo tooltip de recursos que seguia o cursor pelo mapa foi removido e substituído por um painel elegante com posição e largura constantes (166px), fixado diretamente abaixo do minimapa no canto superior direito.
+  - **Identificação Visual Completa**: Exibe o ícone pixel art do item (`.icon`), nome em destaque dourado e identificador (`recurso natural` ou `construção`).
+  - **Informações Detalhadas & Barra de Progresso**: Mostra o item extraído (`Dá: ...`), quantidade restante acompanhada de barra de progresso visual, tempo de extração (`X,Xs / un`) e indicação de ferramenta aceleradora (`machado/picareta acelera` ou `com ferramenta`).
+  - **Alertas Contextuais Semânticos**: Alertas claros de status (`fora de alcance`, `inventário cheio` e `sem energia`) sem poluir a área central de visão do jogador.
+  - **Comportamento Limpo & Não Intrusivo**: O painel se oculta instantaneamente ao mover o mouse para áreas sem recursos, ao passar sobre outros elementos da interface ou ao abrir modais/menus, mantendo a tela desobstruída e sem nunca sobrepor outros componentes da HUD.
+

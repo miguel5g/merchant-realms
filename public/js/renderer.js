@@ -6,7 +6,7 @@ import { state } from './state.js';
 import { $, hideTip } from './utils.js';
 import { send } from './network.js';
 import { uiOpen, typing } from './ui/windows.js';
-import { worldTooltip } from './ui/hud.js';
+import { worldTooltip, hideWorldTooltip } from './ui/hud.js';
 import { handleMovement, handleMining, mouseTile, inReach, selectedItem, overlapsPlayer } from './input.js';
 
 let COL = null;
@@ -110,6 +110,7 @@ export function draw() {
   pop();
 
   if (state.inGame && !uiOpen()) worldTooltip();
+  else hideWorldTooltip();
 }
 
 /* ---------- Chunks e Terreno ---------- */
