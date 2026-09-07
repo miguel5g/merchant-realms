@@ -25,3 +25,9 @@ Este documento reúne todas as alterações em desenvolvimento para a próxima v
   - Tooltip de construções no mundo atualizado para indicar `botão direito para quebrar`.
   - Descrição dos itens colocáveis (`shared/constants.js`) e documentação (`README.md`) alinhados com o novo esquema de botões.
   - Cursor visual no jogo agora suprime o realce amarelo de colocação quando a célula sobrepõe a posição do jogador.
+
+- **Lista de Fabricação (Craft) Enxuta**:
+  - **Listagem Simplificada**: A lista de receitas no menu de fabricação agora exibe de forma limpa apenas o nome do item e a quantidade máxima que pode ser fabricada (`×N`) com os recursos atuais. Os materiais exigidos foram removidos da listagem para evitar poluição visual.
+  - **Painel de Detalhes Dinâmico**: Os materiais necessários (com quantidade exigida e quantidade que o jogador possui no formato `possui / exige` colorido em verde/vermelho) agora só são exibidos no painel de detalhes após um item ser selecionado na lista.
+  - **Estado Inicial Claro**: Ao abrir a tela ou trocar de categoria sem item selecionado, o painel de detalhes exibe uma mensagem amigável instruindo o jogador a clicar em uma receita para ver requisitos e fabricar.
+  - **Botões de Fabricação Integrados**: Mantidos os botões de fabricação (`Fabricar ×1` e `×10`, além de suporte a Shift+clique) no painel de detalhes.

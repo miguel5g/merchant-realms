@@ -146,7 +146,10 @@ input:focus { box-shadow:0 0 0 2px var(--gold); }
 .rcp { display:flex; gap:12px; align-items:center; padding:8px 12px; background:var(--well); box-shadow:0 0 0 2px var(--line); text-align:left; }
 .rcp.on { background:var(--raised); box-shadow:0 0 0 2px var(--gold); }
 .rcp.no { color:#8a9080; } .rcp.no .icon { opacity:.5; }
-.rcp .body { flex:1; } .rcp .needs { font-size:16px; } .rcp .cnt { color:var(--dim); }
+.rcp .name { flex:1; font-size:18px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.rcp .cnt { color:var(--dim); font-size:18px; font-weight:bold; }
+.rcp.on .cnt { color:var(--gold); }
+.rcp.no .cnt { color:#6e7466; }
 #rdetail { background:var(--well); box-shadow:0 0 0 2px var(--line); padding:16px; display:flex; flex-direction:column; gap:12px; }
 #rdetail .big { display:flex; justify-content:center; padding:10px; } #rdetail .big .icon { width:56px; height:56px; box-shadow:inset -8px -8px 0 rgba(0,0,0,.35), inset 8px 8px 0 rgba(255,255,255,.22); }
 #rdetail .desc { color:var(--dim); font-size:17px; line-height:1.2; text-align:center; }

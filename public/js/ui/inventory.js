@@ -84,25 +84,22 @@ export function renderCrafting() {
     invCats.querySelectorAll('button').forEach(b => {
       b.onclick = () => {
         state.craftCat = b.dataset.c;
-        state.craftSel = Game.RECIPES.findIndex(r => r.cat === state.craftCat);
+        state.craftSel = null;
         renderCrafting();
       };
     });
   }
 
   const list = Game.RECIPES.map((r, k) => ({ r, k })).filter(x => x.r.cat === state.craftCat);
-  if (!list.some(x => x.k === state.craftSel) && list.length > 0) {
-    state.craftSel = list[0].k;
+  if (state.craftSel !== null && !list.some(x => x.k === state.craftSel)) {
+    state.craftSel = null;
   }
 
   const recipesEl = $('#recipes');
   if (recipesEl) {
     recipesEl.innerHTML = list.map(({ r, k }) => {
       const n = Game.craftableCount(state.player.inv, r);
-      const needs = Object.entries(r.needs).map(([it, q]) =>
-        `<span class="${state.player.inv.count(it) >= q ? 'green' : 'red'}">${q} ${esc(Game.ITEMS[it].label.toLowerCase())}</span>`
-      ).join(' + ');
-      return `<button class="rcp ${k === state.craftSel ? 'on' : ''} ${n ? '' : 'no'}" data-k="${k}" data-tip="${esc(Game.ITEMS[r.out].label)}">${iconHTML(r.out)}<div class="body"><div>${esc(Game.ITEMS[r.out].label)}</div><div class="needs">${needs}</div></div><span class="cnt">×${n}</span></button>`;
+      return `<button class="rcp ${k === state.craftSel ? 'on' : ''} ${n ? '' : 'no'}" data-k="${k}" data-tip="${esc(Game.ITEMS[r.out].label)}">${iconHTML(r.out)}<span class="name">${esc(Game.ITEMS[r.out].label)}</span><span class="cnt">×${n}</span></button>`;
     }).join('');
 
     recipesEl.querySelectorAll('.rcp').forEach(b => {
@@ -114,13 +111,30 @@ export function renderCrafting() {
     });
   }
 
-  const r = Game.RECIPES[state.craftSel];
-  if (!r) return;
-  const n = Game.craftableCount(state.player.inv, r);
   const rdetail = $('#rdetail');
   if (rdetail) {
+    const r = state.craftSel !== null ? Game.RECIPES[state.craftSel] : null;
+    if (!r) {
+      rdetail.innerHTML = `
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:var(--dim);gap:10px;padding:16px;">
+          <div style="font-size:28px;opacity:0.5;">⚒</div>
+          <div class="px gold" style="font-size:18px">Nenhum item selecionado</div>
+          <div style="font-size:16px;line-height:1.3">Selecione um item na lista ao lado para ver os materiais e fabricar.</div>
+        </div>
+      `;
+      return;
+    }
+
+    const n = Game.craftableCount(state.player.inv, r);
+    const needsHTML = Object.entries(r.needs).map(([it, q]) => {
+      const has = state.player.inv.count(it);
+      const ok = has >= q;
+      return `<div class="row"><span>${esc(Game.ITEMS[it].label)}</span><span><span class="${ok ? 'green' : 'red'}">${has}</span> / ${q}</span></div>`;
+    }).join('');
+
     rdetail.innerHTML = `<div class="big">${iconHTML(r.out)}</div><div class="px gold" style="font-size:18px;text-align:center">${esc(Game.ITEMS[r.out].label)}</div><div class="desc">${esc(Game.ITEMS[r.out].desc)}</div><div class="rule"></div>`
-      + Object.entries(r.needs).map(([it, q]) => `<div class="row"><span>${esc(Game.ITEMS[it].label)}</span><span><span class="${state.player.inv.count(it) >= q ? 'green' : 'red'}">${state.player.inv.count(it)}</span> / ${q}</span></div>`).join('')
+      + `<div class="row dim" style="font-size:15px"><span>Materiais necessários</span><span>possui / exige</span></div>`
+      + needsHTML
       + `<div class="row dim"><span>Valor</span><span>${Game.ITEMS[r.out].value} coroas</span></div><div class="buttons"><button class="btn primary" id="cr1" ${n ? '' : 'disabled'}>Fabricar ×1</button><button class="btn" id="cr10" ${n ? '' : 'disabled'}>×10</button></div>`;
 
     $('#cr1')?.addEventListener('click', e => doCraft(e.shiftKey ? 100 : 1));
@@ -129,5 +143,6 @@ export function renderCrafting() {
 }
 
 export function doCraft(n) {
+  if (state.craftSel === null) return;
   send('craft', { k: state.craftSel, n });
 }

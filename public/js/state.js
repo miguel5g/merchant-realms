@@ -33,7 +33,7 @@ export const state = {
   serverInfo: { name: '', max: 0, seed: 1337 },
   heldFrom: null,
   craftCat: 'basico',
-  craftSel: 0,
+  craftSel: null,
   chatTab: 'all',
   lastWhisper: null,
   chat: [],
