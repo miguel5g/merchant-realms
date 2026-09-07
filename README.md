@@ -40,9 +40,16 @@ Para negociar: T → clique no jogador → Negociar (precisa estar a até 5 tile
 ## Estrutura
 
 ```
-shared/game.js     regras do jogo (mundo, inventário, receitas, progressão, tempo) — roda nos dois lados
-server.js          Fastify: estáticos, WebSocket, validação, chat, comércio, dia/noite, persistência
-public/index.html  telas (menu, HUD, inventário, comércio, chat, perfil)
-public/style.css   tokens visuais do design
-public/client.js   renderização p5 + interface + rede
+shared/constants.js   definições, itens, blocos, receitas, perícias e constantes
+shared/PerlinNoise.js classe de geração determinística de terreno
+shared/Inventory.js   classe de inventário e gerenciamento de pilhas
+shared/Crafting.js    classe e regras de receitas e fabricação
+shared/Progression.js classe de níveis, títulos, perícias e conquistas
+shared/GameTime.js    classe de ciclo de tempo e relógio
+shared/World.js       classe de gestão e manipulação do mundo
+shared/game.js        agregador e compatibilidade Node.js / browser
+server.js             Fastify: estáticos, WebSocket, validação, chat, comércio, dia/noite, persistência
+public/index.html     telas (menu, HUD, inventário, comércio, chat, perfil)
+public/style.css      tokens visuais do design
+public/client.js      renderização p5 + interface + rede
 ```
