@@ -6,8 +6,27 @@ Protótipo multiplayer (p5.js + Fastify).
 
 ```
 npm install
-npm start          # http://localhost:3000
+npm start          # http://localhost:3000 (modo padrão)
+npm run dev        # modo desenvolvimento com recarregamento automático
 ```
+
+### Produção com PM2
+
+```bash
+# Iniciar em produção
+npm run pm2:start
+# ou: npx pm2 start ecosystem.config.js --env production
+
+# Acompanhar logs
+npm run pm2:logs
+
+# Reiniciar
+npm run pm2:restart
+
+# Parar
+npm run pm2:stop
+```
+
 
 Abra a URL em mais de uma aba (ou em outra máquina na rede, pelo IP) para jogar junto.
 
