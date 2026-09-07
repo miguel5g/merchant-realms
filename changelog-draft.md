@@ -59,6 +59,26 @@ a bancada como pré-requisito — e agora isso está explícito na interface
 ("na mão · sem estação"). Mundos salvos antes da mudança descartam a bancada
 automaticamente ao carregar, e o terreno original volta no lugar.
 
+### correcao — Janelas de troca e fabricação com conteúdo saindo para fora
+
+Duas interfaces vazavam do próprio quadro em telas menores.
+
+Na **troca**, o grid do inventário tinha largura fixa maior que a coluna que o
+continha, então a janela ganhava barra de rolagem horizontal *e* vertical — era
+preciso rolar para ver os 32 slots. Agora os slots são elásticos: o grid ocupa
+exatamente o espaço disponível e as 4 linhas aparecem inteiras, sem rolagem
+nenhuma, de 900×560 até 1920×1080.
+
+Na **fabricação**, o painel de detalhes de um blueprint pedia mais altura do que
+a janela tinha, e o excesso escorria para fora da borda — a dica "Shift+clique
+fabrica o máximo", o total de coroas e a linha "Uso · único" apareciam por cima
+ou abaixo do quadro. O conteúdo do detalhe passou a ficar contido, com os botões
+Comprar/×10 sempre fixos no rodapé do painel.
+
+Junto disso, as duas janelas ficaram um pouco maiores, as abas de categoria
+quebram linha quando não cabem, e o nome de uma receita longa agora quebra em
+duas linhas em vez de ser cortado com reticências.
+
 ---
 
 ## Notas técnicas (não vão para a changelog)

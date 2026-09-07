@@ -116,7 +116,7 @@ export function renderCrafting() {
     const r = state.craftSel !== null ? Game.RECIPES[state.craftSel] : null;
     if (!r) {
       rdetail.innerHTML = `
-        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:var(--dim);gap:10px;padding:16px;">
+        <div class="rd-body" style="align-items:center;justify-content:center;text-align:center;color:var(--dim);gap:10px;padding:16px;">
           <div style="font-size:28px;opacity:0.5;">⚒</div>
           <div class="px gold" style="font-size:18px">Nenhum item selecionado</div>
           <div style="font-size:16px;line-height:1.3">Selecione um item na lista ao lado para ver os materiais e fabricar.</div>
@@ -138,7 +138,7 @@ export function renderCrafting() {
         costHTML += `<div class="row dim"><span>Produz</span><span>${gen.n} ${esc(Game.ITEMS[gen.item].label.toLowerCase())} / ${(gen.interval / 1000).toFixed(0)}s</span></div>`
           + `<div class="row dim"><span>Estoque máximo</span><span>${gen.cap}</span></div>`;
       }
-      costHTML += `<div class="row dim"><span>Uso</span><span>único — some ao colocar</span></div>`;
+      costHTML += `<div class="row dim"><span>Uso</span><span>único · some ao colocar</span></div>`;
     } else {
       costHTML = `<div class="row dim" style="font-size:15px"><span>Materiais necessários</span><span>possui / exige</span></div>`
         + Object.entries(r.needs).map(([it, q]) => {
@@ -149,9 +149,9 @@ export function renderCrafting() {
         + `<div class="row dim"><span>Valor</span><span>${Game.ITEMS[r.out].value} coroas</span></div>`;
     }
 
-    rdetail.innerHTML = `<div class="big">${iconHTML(r.out)}</div><div class="px gold" style="font-size:18px;text-align:center">${esc(Game.ITEMS[r.out].label)}</div><div class="desc">${esc(Game.ITEMS[r.out].desc)}</div><div class="rule"></div>`
+    rdetail.innerHTML = `<div class="rd-body"><div class="big">${iconHTML(r.out)}</div><div class="px gold" style="font-size:18px;text-align:center">${esc(Game.ITEMS[r.out].label)}</div><div class="desc">${esc(Game.ITEMS[r.out].desc)}</div><div class="rule"></div>`
       + costHTML
-      + `<div class="buttons"><button class="btn primary" id="cr1" ${n ? '' : 'disabled'}>${r.coins ? 'Comprar ×1' : 'Fabricar ×1'}</button><button class="btn" id="cr10" ${n ? '' : 'disabled'}>×10</button></div>`;
+      + `</div><div class="buttons"><button class="btn primary" id="cr1" ${n ? '' : 'disabled'}>${r.coins ? 'Comprar ×1' : 'Fabricar ×1'}</button><button class="btn" id="cr10" ${n ? '' : 'disabled'}>×10</button></div>`;
 
     $('#cr1')?.addEventListener('click', e => doCraft(e.shiftKey ? 100 : 1));
     $('#cr10')?.addEventListener('click', e => doCraft(e.shiftKey ? 100 : 10));
