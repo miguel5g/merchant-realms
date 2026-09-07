@@ -1,6 +1,6 @@
 {
   "name": "merchant-realms",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "description": "Merchant Realms — Domine a cadeia de suprimentos, domine o mundo.",
   "main": "server.js",

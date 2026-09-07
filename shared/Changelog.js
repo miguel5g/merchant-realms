@@ -13,10 +13,42 @@
 
   const CHANGELOG = [
     {
+      version: 'v0.4.0',
+      date: '07 de Setembro de 2026',
+      title: 'Controles e Interação com o Mundo',
+      current: true,
+      items: [
+        {
+          type: 'melhoria',
+          title: 'Inversão dos Botões de Interação',
+          desc: 'Botão esquerdo agora coloca itens de construção selecionados na hotbar (muros, baús e bancadas). Botão direito quebra blocos e extrai recursos sob o cursor (árvores, rochas, minérios e construções), independente do item selecionado.'
+        },
+        {
+          type: 'melhoria',
+          title: 'Validação Completa de Posicionamento',
+          desc: 'Checagem rigorosa de alcance (3 tiles), terreno desobstruído e sobreposição com caixas de colisão de jogadores (evitando prendê-los dentro de estruturas). O consumo de item no inventário ocorre apenas após aprovação de todas as validações.'
+        },
+        {
+          type: 'novo',
+          title: 'Painel Fixo de Inspeção de Recursos',
+          desc: 'Substituição do tooltip flutuante por um painel elegante fixado abaixo do minimapa, exibindo ícone pixel art, rendimento, tempo de extração, ferramenta recomendada, barra de progresso visual e alertas contextuais limpos.'
+        },
+        {
+          type: 'melhoria',
+          title: 'Lista de Fabricação (Craft) Enxuta',
+          desc: 'Listagem de receitas simplificada exibindo apenas o nome e quantidade máxima fabricável (×N). Materiais necessários e botões de fabricação agora residem de forma limpa no painel de detalhes dinâmico.'
+        },
+        {
+          type: 'melhoria',
+          title: 'Atualização de Instruções e Indicadores Visuais',
+          desc: 'Hotbar (#hb-label), janela de controles [Esc], tooltips e documentação atualizados para refletir o novo padrão de botões, com supressão inteligente do realce amarelo quando a mira sobrepõe o jogador.'
+        }
+      ]
+    },
+    {
       version: 'v0.3.0',
       date: '07 de Setembro de 2026',
       title: 'Sistema de Perfil, Conquistas e Economia',
-      current: true,
       items: [
         {
           type: 'melhoria',
