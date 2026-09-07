@@ -1,4 +1,8 @@
-# Terras Abertas — protótipo multiplayer (p5.js + Fastify)
+# Merchant Realms
+
+> Domine a cadeia de suprimentos, domine o mundo.
+
+Protótipo multiplayer (p5.js + Fastify).
 
 ```
 npm install

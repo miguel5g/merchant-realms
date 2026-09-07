@@ -1,5 +1,5 @@
 /* ============================================================
-   client.js — Ponto de entrada modular do frontend (Terras Abertas).
+   client.js — Ponto de entrada modular do frontend (Merchant Realms).
    Orquestra os subsistemas de renderização (p5), rede (ws),
    entradas (mouse/teclado) e interfaces de usuário (DOM).
    ============================================================ */

@@ -1,5 +1,5 @@
 /* ============================================================
-   state.js — Estado centralizado do cliente (Terras Abertas).
+   state.js — Estado centralizado do cliente (Merchant Realms).
    Exporta o objeto reativo state compartilhado entre módulos.
    ============================================================ */
 

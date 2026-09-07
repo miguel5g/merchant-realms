@@ -1,8 +1,8 @@
 {
-  "name": "prototipo-fabrica",
-  "version": "0.2.0",
+  "name": "merchant-realms",
+  "version": "0.3.0",
   "private": true,
-  "description": "Protótipo multiplayer estilo Factorio — p5.js no cliente, Fastify + WebSocket no servidor",
+  "description": "Merchant Realms — Domine a cadeia de suprimentos, domine o mundo.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

@@ -120,7 +120,7 @@ export function initMenuListeners() {
   });
 
   $('#btn-credits')?.addEventListener('click', () => {
-    toast('Protótipo em p5.js + Fastify. Interface baseada no design "Terras Abertas".');
+    toast('Merchant Realms — Domine a cadeia de suprimentos, domine o mundo.');
   });
 
   const menuVerEl = $('.ver');

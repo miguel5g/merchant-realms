@@ -22,7 +22,7 @@
     }
 
     static titleFor(level) {
-      if (level >= 9) return 'Mestre das Terras';
+      if (level >= 9) return 'Mestre dos Reinos';
       if (level >= 7) return 'Veterano';
       if (level >= 5) return 'Artesão';
       if (level >= 3) return 'Colono';
