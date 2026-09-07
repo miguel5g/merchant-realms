@@ -14,6 +14,7 @@ import { closeAll } from './ui/windows.js';
 import { loadServers } from './ui/menu.js';
 
 export function connect(base, name) {
+  state.rejectReason = null;
   const u = base ? new URL(base) : location;
   const proto = u.protocol === 'https:' ? 'wss' : 'ws';
   state.ws = new WebSocket(`${proto}://${u.host}/ws?nome=${encodeURIComponent(name)}`);
@@ -31,8 +32,12 @@ export function connect(base, name) {
       leaveGame('Desconectado do servidor.');
     } else {
       const errEl = $('#menu-err');
-      if (errEl && !errEl.textContent.includes('já') && !errEl.textContent.includes('cheio')) {
-        errEl.textContent = 'Conexão encerrada.';
+      if (errEl) {
+        if (state.rejectReason) {
+          errEl.textContent = state.rejectReason;
+        } else if (!errEl.textContent || errEl.textContent === 'conectando…') {
+          errEl.textContent = 'Conexão encerrada.';
+        }
       }
       state.connected = false;
     }
@@ -40,7 +45,7 @@ export function connect(base, name) {
 
   state.ws.onerror = () => {
     const errEl = $('#menu-err');
-    if (errEl) errEl.textContent = 'Não foi possível conectar.';
+    if (errEl && !state.rejectReason) errEl.textContent = 'Não foi possível conectar.';
   };
 }
 
@@ -75,6 +80,7 @@ export function renderAll() {
 export function onMessage(m) {
   switch (m.type) {
     case 'reject':
+      state.rejectReason = m.reason;
       const err = $('#menu-err');
       if (err) err.textContent = m.reason;
       break;

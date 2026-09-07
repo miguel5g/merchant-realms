@@ -170,9 +170,9 @@ export function initChatListeners() {
     if (cmd) {
       const [, c, rest] = cmd;
       if (c === 'w' || c === 'sussurrar') {
-        const m = rest.match(/^(\S+)\s+(.*)$/s);
+        const m = rest.match(/^(?:\"([^\"]+)\"|'([^']+)'|(\S+))\s+(.*)$/s);
         if (!m) return toast('Uso: /w nome mensagem');
-        ch = 'whisper'; to = m[1]; text = m[2];
+        ch = 'whisper'; to = m[1] || m[2] || m[3]; text = m[4];
       } else if (c === 'r') {
         if (!state.lastWhisper) return toast('Ninguém sussurrou para você ainda.');
         ch = 'whisper'; to = state.lastWhisper; text = rest;

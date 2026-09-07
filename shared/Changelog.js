@@ -40,6 +40,11 @@
         },
         {
           type: 'melhoria',
+          title: 'Regras de Nomes no Multiplayer e Chat Privado',
+          desc: 'Restrição de caracteres para nomes de jogadores (2 a 16 caracteres, sem espaços, apenas letras, números, _ ou -), garantindo o funcionamento perfeito do comando de sussurro /w.'
+        },
+        {
+          type: 'melhoria',
           title: 'Minimapa com Marcadores de Jogadores',
           desc: 'O minimapa agora exibe outros jogadores com suas respectivas cores em tempo real.'
         },

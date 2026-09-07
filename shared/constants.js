@@ -106,6 +106,33 @@
     { id:'rico',       label:'Cofre cheio',       desc:'Acumule 200 coroas.',          col:'#ffe1a0', test:s => (s.maxCoins||0) >= 200 },
   ];
 
+  const PLAYER_NAME_MIN_LEN = 2;
+  const PLAYER_NAME_MAX_LEN = 16;
+  const PLAYER_NAME_REGEX = /^[\p{L}\p{N}_-]{2,16}$/u;
+
+  function validatePlayerName(name) {
+    if (typeof name !== 'string') {
+      return { ok: false, reason: 'Nome inválido.' };
+    }
+    const clean = name.trim();
+    if (!clean) {
+      return { ok: false, reason: 'Escolha um nome antes de entrar.' };
+    }
+    if (/\s/.test(name)) {
+      return { ok: false, reason: 'O nome não pode conter espaços.' };
+    }
+    if (clean.length < PLAYER_NAME_MIN_LEN) {
+      return { ok: false, reason: `O nome deve ter pelo menos ${PLAYER_NAME_MIN_LEN} caracteres.` };
+    }
+    if (clean.length > PLAYER_NAME_MAX_LEN) {
+      return { ok: false, reason: `O nome pode ter no máximo ${PLAYER_NAME_MAX_LEN} caracteres.` };
+    }
+    if (!PLAYER_NAME_REGEX.test(clean)) {
+      return { ok: false, reason: 'Use apenas letras, números, hífen (-) ou underline (_).' };
+    }
+    return { ok: true, name: clean };
+  }
+
   return {
     TILE,
     CHUNK,
@@ -126,6 +153,10 @@
     XP,
     SKILLS,
     ACHIEVEMENTS,
+    PLAYER_NAME_MIN_LEN,
+    PLAYER_NAME_MAX_LEN,
+    PLAYER_NAME_REGEX,
+    validatePlayerName,
     stackOf,
   };
 });

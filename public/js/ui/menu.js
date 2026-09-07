@@ -67,12 +67,15 @@ export function renderServers() {
 export function initMenuListeners() {
   $('#join')?.addEventListener('click', () => {
     const nameInput = $('#name');
-    const name = nameInput ? nameInput.value.trim() : '';
+    const rawName = nameInput ? nameInput.value : '';
     const menuErr = $('#menu-err');
-    if (!name) {
-      if (menuErr) menuErr.textContent = 'Escolha um nome antes de entrar.';
+    const valid = Game.validatePlayerName ? Game.validatePlayerName(rawName) : { ok: !!rawName.trim(), name: rawName.trim() };
+    if (!valid.ok) {
+      if (menuErr) menuErr.textContent = valid.reason;
+      nameInput?.focus();
       return;
     }
+    const name = valid.name;
     const s = state.servers.list[state.servers.sel];
     if (!s || !s.ok) {
       if (menuErr) menuErr.textContent = 'Selecione um servidor online.';
@@ -87,7 +90,20 @@ export function initMenuListeners() {
   if (nameInput) {
     nameInput.value = localStorage.getItem('nome') || '';
     nameInput.addEventListener('keydown', e => {
+      if (e.key === ' ') {
+        e.preventDefault();
+        const menuErr = $('#menu-err');
+        if (menuErr) menuErr.textContent = 'Nomes não podem ter espaços. Use _ ou -.';
+        return;
+      }
       if (e.key === 'Enter') $('#join')?.click();
+    });
+    nameInput.addEventListener('input', () => {
+      const menuErr = $('#menu-err');
+      if (menuErr && (menuErr.textContent.includes('espaço') || menuErr.textContent.includes('caracteres') || menuErr.textContent.includes('letras'))) {
+        const check = Game.validatePlayerName ? Game.validatePlayerName(nameInput.value) : { ok: true };
+        if (check.ok) menuErr.textContent = '';
+      }
     });
   }
 

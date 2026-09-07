@@ -40,6 +40,7 @@ export const state = {
   trade: null,
   camera: { x: 0, y: 0 },
   servers: { list: [], sel: 0 },
+  rejectReason: null,
   cnv: null
 };
 

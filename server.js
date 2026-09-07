@@ -232,12 +232,18 @@ app.get('/servers', async () => [{ name:SERVER_NAME, url:'', online:players.size
 
 app.register(async function (f) {
   f.get('/ws', { websocket:true }, (socket, req) => {
-    const name = String(req.query.nome || '').trim().slice(0, 16).replace(/[<>]/g, '') || `jogador${nextId}`;
+    const rawName = String(req.query.nome || '');
+    const valid = G.validatePlayerName(rawName);
+    if (!valid.ok) {
+      socket.send(JSON.stringify({ type:'reject', reason: valid.reason }));
+      return socket.close();
+    }
+    const name = valid.name;
     if (players.size >= MAX_PLAYERS) { socket.send(JSON.stringify({ type:'reject', reason:'Servidor cheio.' })); return socket.close(); }
     if (findByName(name)) { socket.send(JSON.stringify({ type:'reject', reason:`O nome "${name}" já está em uso neste servidor.` })); return socket.close(); }
 
     const [sx, sy] = world.findSpawn();
-    const saved = profiles[name] || {};
+    const saved = profiles[name] || profiles[name.replace(/_/g, ' ')] || {};
     const p = {
       id:nextId++, name, socket, sel:0, lastMine:0, energy:100, tradeId:null, tradeReqFrom:null, joinedAt:Date.now(), lastSaveMs:Date.now(),
       col: saved.col || G.PALETTE[nextId % G.PALETTE.length],
@@ -311,5 +317,6 @@ function save() {
 }
 setInterval(save, 10000);
 process.on('SIGINT', () => { save(); process.exit(); });
+process.on('SIGTERM', () => { save(); process.exit(); });
 
 app.listen({ port:PORT, host:'0.0.0.0' }).then(() => console.log(`${SERVER_NAME} em http://localhost:${PORT}  (seed ${SEED}, dia ${lastDay})`));
