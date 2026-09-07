@@ -51,8 +51,9 @@ input:focus { box-shadow:0 0 0 2px var(--gold); }
 #held .icon { width:30px; height:30px; }
 
 /* tooltip */
-#tooltip { position:fixed; z-index:60; pointer-events:none; background:rgba(20,24,18,.94); box-shadow:0 0 0 2px var(--line); padding:8px 12px; font-size:18px; line-height:1.2; max-width:300px; }
-#tooltip .t { color:var(--gold); }
+#tooltip { position:fixed; z-index:100; pointer-events:none; background:rgba(18,22,16,.96); box-shadow:0 0 0 2px var(--line), 0 6px 20px rgba(0,0,0,.6); padding:6px 10px; font-size:17px; line-height:1.25; max-width:280px; border-radius:2px; }
+#tooltip .t { color:var(--gold); font-weight:500; }
+#tooltip div:not(.t) { color:var(--dim); font-size:14px; margin-top:2px; }
 
 /* ===== 1a menu ===== */
 #menu { position:fixed; inset:0; z-index:30; }

@@ -77,23 +77,38 @@ export function worldTooltip() {
 }
 
 export function initTooltipListeners() {
-  document.addEventListener('mousemove', e => {
+  const handlePointer = e => {
     if (state.heldFrom !== null) {
       const heldEl = $('#held');
       if (heldEl) {
         heldEl.style.left = e.clientX + 12 + 'px';
         heldEl.style.top = e.clientY - 15 + 'px';
       }
+      hideTip();
+      return;
     }
+
     const el = e.target.closest?.('[data-tip]');
-    if (el && state.heldFrom === null) {
+    if (el) {
       showTip(el.dataset.tip, e.clientX, e.clientY);
-    } else if (state.cnv && e.target !== state.cnv.elt) {
+      return;
+    }
+
+    const ach = e.target.closest?.('#pf-ach [data-ach]');
+    if (ach?.dataset?.ach) {
+      showTip(ach.dataset.ach, e.clientX, e.clientY);
+      return;
+    }
+
+    if (state.cnv && e.target !== state.cnv.elt) {
       hideTip();
     }
-    if (e.target.closest?.('#pf-ach')) {
-      const a = e.target.dataset.ach;
-      if (a) showTip(a, e.clientX, e.clientY);
-    }
+  };
+
+  document.addEventListener('mousemove', handlePointer);
+  document.addEventListener('mouseover', handlePointer);
+
+  document.addEventListener('mouseleave', () => {
+    hideTip();
   });
 }

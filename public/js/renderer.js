@@ -110,7 +110,6 @@ export function draw() {
   pop();
 
   if (state.inGame && !uiOpen()) worldTooltip();
-  else if (state.inGame) hideTip();
 }
 
 /* ---------- Chunks e Terreno ---------- */

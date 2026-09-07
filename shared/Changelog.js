@@ -19,6 +19,11 @@
       current: true,
       items: [
         {
+          type: 'melhoria',
+          title: 'Tooltips Simples nos Inventários',
+          desc: 'Ao passar o mouse sobre qualquer item nos slots de inventário, atalhos, equipamentos ou trocas, um tooltip claro e limpo exibe o nome do item e sua durabilidade.'
+        },
+        {
           type: 'novo',
           title: 'Tela de Changelog Integrada',
           desc: 'Adicionada interface para acompanhar todas as notas de atualização do jogo pelo menu ou pressionando [C].'

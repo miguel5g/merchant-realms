@@ -4,15 +4,15 @@
    entradas (mouse/teclado) e interfaces de usuário (DOM).
    ============================================================ */
 
-import { state } from './js/state.js';
-import { setup, draw, windowResized } from './js/renderer.js';
-import { handleMousePressed, handleMouseWheel } from './js/input.js';
-import { initTooltipListeners } from './js/ui/hud.js';
-import { initWindowListeners } from './js/ui/windows.js';
-import { initTradeListeners } from './js/ui/trade.js';
-import { initChatListeners } from './js/ui/chat.js';
-import { initChangelogListeners } from './js/ui/changelog.js';
-import { loadServers, initMenuListeners } from './js/ui/menu.js';
+import { state } from './js/state.js?v=0.3.1';
+import { setup, draw, windowResized } from './js/renderer.js?v=0.3.1';
+import { handleMousePressed, handleMouseWheel } from './js/input.js?v=0.3.1';
+import { initTooltipListeners } from './js/ui/hud.js?v=0.3.1';
+import { initWindowListeners } from './js/ui/windows.js?v=0.3.1';
+import { initTradeListeners } from './js/ui/trade.js?v=0.3.1';
+import { initChatListeners } from './js/ui/chat.js?v=0.3.1';
+import { initChangelogListeners } from './js/ui/changelog.js?v=0.3.1';
+import { loadServers, initMenuListeners } from './js/ui/menu.js?v=0.3.1';
 
 /* ---------- Binds do ciclo de vida global do p5.js ---------- */
 window.setup = setup;

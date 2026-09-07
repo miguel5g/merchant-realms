@@ -3,7 +3,7 @@
    ============================================================ */
 
 import { state } from '../state.js';
-import { $, esc, slotHTML, iconHTML, hideTip } from '../utils.js';
+import { $, esc, slotHTML, iconHTML, tipFor, hideTip } from '../utils.js';
 import { send } from '../network.js';
 
 const HOTBAR = 8;
@@ -36,7 +36,8 @@ export function renderInventory() {
   if (invEquip) {
     invEquip.innerHTML = [['pick', 100, 'Picareta'], ['axe', 101, 'Machado']].map(([k, i, lab]) => {
       const s = state.player.equip[k];
-      return `<div class="eq">${slotHTML(s, { data: `data-i="${i}"`, dimmed: held(i) })}<div>${s ? `<div>${esc(Game.ITEMS[s.item].label)}</div><div class="dim">durabilidade ${Math.round(100 * s.dur / Game.ITEMS[s.item].dur)}%</div>` : `<div class="dim">${lab}</div><div class="dim2">vazio</div>`}</div></div>`;
+      const eqTip = s ? ` data-tip="${esc(tipFor(s)).replace(/\n/g, '|')}"` : '';
+      return `<div class="eq"${eqTip}>${slotHTML(s, { data: `data-i="${i}"`, dimmed: held(i) })}<div>${s ? `<div>${esc(Game.ITEMS[s.item].label)}</div><div class="dim">durabilidade ${Math.round(100 * s.dur / Game.ITEMS[s.item].dur)}%</div>` : `<div class="dim">${lab}</div><div class="dim2">vazio</div>`}</div></div>`;
     }).join('');
   }
 
@@ -101,7 +102,7 @@ export function renderCrafting() {
       const needs = Object.entries(r.needs).map(([it, q]) =>
         `<span class="${state.player.inv.count(it) >= q ? 'green' : 'red'}">${q} ${esc(Game.ITEMS[it].label.toLowerCase())}</span>`
       ).join(' + ');
-      return `<button class="rcp ${k === state.craftSel ? 'on' : ''} ${n ? '' : 'no'}" data-k="${k}">${iconHTML(r.out)}<div class="body"><div>${esc(Game.ITEMS[r.out].label)}</div><div class="needs">${needs}</div></div><span class="cnt">×${n}</span></button>`;
+      return `<button class="rcp ${k === state.craftSel ? 'on' : ''} ${n ? '' : 'no'}" data-k="${k}" data-tip="${esc(Game.ITEMS[r.out].label)}">${iconHTML(r.out)}<div class="body"><div>${esc(Game.ITEMS[r.out].label)}</div><div class="needs">${needs}</div></div><span class="cnt">×${n}</span></button>`;
     }).join('');
 
     recipesEl.querySelectorAll('.rcp').forEach(b => {

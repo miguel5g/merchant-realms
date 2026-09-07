@@ -25,11 +25,11 @@ export function iconHTML(item, extra = '') {
 export function tipFor(s) {
   const it = Game.ITEMS[s.item];
   if (!it) return '';
-  return [
-    it.label,
-    (s.dur !== undefined ? `durabilidade ${Math.round(100 * s.dur / it.dur)}%` : '×' + s.n),
-    it.desc
-  ].join('\n');
+  const lines = [it.label];
+  if (s.dur !== undefined && it.dur) {
+    lines.push(`durabilidade ${Math.round(100 * s.dur / it.dur)}%`);
+  }
+  return lines.join('\n');
 }
 
 export function slotHTML(s, o = {}) {
@@ -43,15 +43,21 @@ export function slotHTML(s, o = {}) {
 
 export function showTip(text, x, y) {
   const t = $('#tooltip');
-  if (!t) return;
-  t.innerHTML = text.split(/\n|\|/).map((l, i) => `<div class="${i ? '' : 't'}">${esc(l)}</div>`).join('');
+  if (!t || !text) return;
+  if (t.dataset.tipText !== text) {
+    t.dataset.tipText = text;
+    t.innerHTML = text.split(/\n|\|/).map((l, i) => `<div class="${i ? '' : 't'}">${esc(l)}</div>`).join('');
+  }
   t.classList.remove('hidden');
   const w = t.offsetWidth, h = t.offsetHeight;
-  t.style.left = Math.min(x + 16, window.innerWidth - w - 8) + 'px';
-  t.style.top = Math.min(y + 16, window.innerHeight - h - 8) + 'px';
+  t.style.left = Math.min(x + 14, window.innerWidth - w - 8) + 'px';
+  t.style.top = Math.min(y + 14, window.innerHeight - h - 8) + 'px';
 }
 
 export function hideTip() {
   const t = $('#tooltip');
-  if (t) t.classList.add('hidden');
+  if (t) {
+    t.classList.add('hidden');
+    t.dataset.tipText = '';
+  }
 }
