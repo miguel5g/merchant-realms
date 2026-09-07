@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Terras Abertas — protótipo</title>
+<link rel="stylesheet" href="/style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
+<script src="/shared/game.js"></script>
+</head>
+<body>
+
+<div id="night"></div>
+
+<!-- ===== 1a Menu principal ===== -->
+<div id="menu">
+  <div class="veil"></div>
+  <div class="logo"><h1>TERRAS ABERTAS</h1><p>colete · negocie · construa</p></div>
+  <div class="box">
+    <div class="name"><label for="name">Seu nome</label><input id="name" maxlength="16" placeholder="como querem te chamar?" autocomplete="off"></div>
+    <div class="row"><span class="px gold" style="font-size:18px">Servidores</span><span class="dim">nome · jogadores · dia · ping</span></div>
+    <div id="servers"><div class="srv off"><span>procurando servidores…</span></div></div>
+    <div class="err" id="menu-err"></div>
+    <div class="actions">
+      <button class="btn primary" id="join">Entrar no servidor</button>
+      <button class="btn" id="create" title="Rode outra instância com PORT e SEED diferentes e adicione em PEERS">Criar servidor</button>
+    </div>
+  </div>
+  <div id="controls" class="hidden">
+    <div><b>WASD / setas</b> mover</div><div><b>botão esquerdo</b> minerar (segure)</div>
+    <div><b>botão direito</b> colocar item selecionado</div><div><b>1–8 / scroll</b> selecionar na hotbar</div>
+    <div><b>E</b> inventário e fabricação</div><div><b>Enter</b> chat · <b>T</b> jogadores</div>
+    <div><b>P</b> perfil</div><div><b>Esc</b> fecha qualquer janela</div>
+  </div>
+  <div class="links"><button id="btn-controls">Controles</button><button id="btn-credits">Créditos</button></div>
+  <div class="ver">v0.3 protótipo · <span id="menu-seed"></span></div>
+</div>
+
+<!-- ===== 1b HUD ===== -->
+<div id="hud" class="hidden">
+  <div id="status" class="panel">
+    <div class="row px" style="font-size:16px"><span class="gold" id="st-name"></span><span class="dim" id="st-level">Nv 1</span></div>
+    <div class="bar"><label>HP</label><div class="track"><div class="fill" id="st-hp" style="width:100%;background:#c8503c"></div></div><span class="val" id="st-hp-v">100/100</span></div>
+    <div class="bar"><label>EN</label><div class="track"><div class="fill" id="st-en" style="width:100%;background:var(--gold)"></div></div><span class="val" id="st-en-v">100/100</span></div>
+    <div class="row dim" style="font-size:16px"><span id="st-tile">tile 0, 0</span><span id="st-time">Dia 1 · 06:00</span></div>
+  </div>
+  <div id="minimap" class="panel"><canvas width="150" height="150"></canvas><div class="foot"><span>N</span><span id="mm-fps"></span></div></div>
+  <div id="chatmini"><div id="chatmini-lines"></div><div class="hint">Enter para falar · T lista de jogadores</div></div>
+  <div id="hotbar"><div class="label" id="hb-label"></div><div class="slots" id="hb-slots"></div></div>
+  <div id="quick">
+    <button data-open="inv"><b>E</b> inventário</button>
+    <button data-open="players"><b>T</b> jogadores</button>
+    <button data-open="profile"><b>P</b> perfil</button>
+  </div>
+</div>
+
+<!-- ===== 1g chat expandido ===== -->
+<div id="chatbox" class="hidden">
+  <div class="tabs">
+    <button data-tab="all" class="on">Tudo</button><button data-tab="global">Global</button><button data-tab="local">Local</button><button data-tab="whisper">Sussurro</button><button data-tab="trade">Comércio</button>
+  </div>
+  <div id="chatlog"></div>
+  <form id="chatform"><span class="chip" id="chatchip">global</span><input id="chatinput" maxlength="200" autocomplete="off" placeholder="/w nome mensagem · /r responde · /l local · /t comércio"><button type="submit">Enviar</button></form>
+</div>
+
+<!-- ===== 1g lista de jogadores ===== -->
+<div id="players" class="hidden">
+  <div class="row"><span class="subtitle" style="font-size:18px">Jogadores online</span><span class="dim" id="pl-count"></span></div>
+  <div class="list" id="pl-list"></div>
+  <div class="foot">clique: sussurrar · negociar</div>
+</div>
+<div id="ctx" class="hidden"></div>
+
+<!-- ===== 1c inventário e fabricação ===== -->
+<div id="inv" class="modal-bg hidden">
+  <div class="modal">
+    <div class="left">
+      <div class="row"><span class="title">Inventário</span><span class="dim" id="inv-used">0 / 32 ocupados</span></div>
+      <div class="grid8" id="inv-grid"></div>
+      <div class="rule"></div>
+      <div class="grid8" id="inv-hot"></div>
+      <div class="row" style="margin-top:8px"><span class="subtitle">Equipamento</span><span class="dim">ferramenta define velocidade</span></div>
+      <div class="equip" id="inv-equip"></div>
+      <div class="foot"><span><i class="coin"></i><span id="inv-coins">0</span> coroas</span><span class="dim" style="font-size:17px">arraste para mover · clique direito divide pilha</span></div>
+    </div>
+    <div class="right">
+      <div class="row"><span class="title">Fabricação</span><span class="dim">na mão · sem bancada</span></div>
+      <div class="cats" id="inv-cats"></div>
+      <div class="craft"><div id="recipes"></div><div id="rdetail"></div></div>
+      <div class="dim" style="font-size:17px">Shift+clique fabrica o máximo · E ou Esc fecha</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 1d comércio ===== -->
+<div id="trade" class="modal-bg hidden">
+  <div class="modal">
+    <div class="row"><span class="title" id="tr-title">Troca</span><span class="dim" id="tr-dist"></span></div>
+    <div class="cols">
+      <div class="side">
+        <div class="row"><div class="who"><span class="sq" id="tr-mysq"></span><span>Você oferece</span></div><span id="tr-myconf" style="font-size:17px"></span></div>
+        <div class="grid4" id="tr-myoffer"></div>
+        <div class="coins"><span class="dim">Coroas</span><input id="tr-mycoins" type="number" min="0" value="0"><span class="dim2" id="tr-mymax"></span></div>
+        <div class="rule"></div>
+        <div class="dim" style="font-size:17px">Seu inventário · clique move a pilha, clique direito move 1</div>
+        <div class="grid8" id="tr-inv"></div>
+      </div>
+      <div class="mid">
+        <div class="arrow">⇄</div>
+        <div>Valor estimado<br><span id="tr-values" style="color:var(--text);font-size:20px">0 vs 0</span><br>coroas</div>
+        <div id="tr-fair" style="font-size:16px"></div>
+      </div>
+      <div class="side">
+        <div class="row"><div class="who"><span class="sq" id="tr-thsq"></span><span id="tr-thname">Outro oferece</span></div><span id="tr-thconf" style="font-size:17px"></span></div>
+        <div class="grid4" id="tr-thoffer"></div>
+        <div class="coins"><span class="dim">Coroas</span><span id="tr-thcoins">0</span></div>
+        <div class="rule"></div>
+        <div class="dim" style="font-size:17px" id="tr-about-t">Sobre</div>
+        <div class="about" id="tr-about"></div>
+        <div class="dim" style="margin-top:auto;font-size:16px">Se o outro lado alterar a oferta, sua confirmação é desfeita.</div>
+      </div>
+    </div>
+    <div class="foot"><span class="dim" style="font-size:17px">A troca só acontece quando os dois confirmarem.</span><span style="display:flex;gap:12px"><button class="btn" id="tr-cancel">Cancelar</button><button class="btn primary" id="tr-confirm">Confirmar troca</button></span></div>
+  </div>
+</div>
+
+<!-- ===== 1h perfil ===== -->
+<div id="profile" class="modal-bg hidden">
+  <div class="modal">
+    <div class="left">
+      <div class="avatar"><div class="body" id="pf-body"><i></i><i></i></div><div class="sh"></div></div>
+      <div style="text-align:center"><div class="px gold" style="font-size:26px" id="pf-name"></div><div class="dim" id="pf-title"></div></div>
+      <div class="badges" id="pf-badges"></div>
+      <div class="xp">
+        <div class="row"><span class="dim">Nível</span><span id="pf-level"></span></div>
+        <div class="track"><i id="pf-xpbar"></i></div>
+        <div class="row dim" style="font-size:16px"><span id="pf-xp"></span><span id="pf-next"></span></div>
+      </div>
+      <div class="xp" style="margin-top:6px"><span class="px gold" style="font-size:15px">Aparência</span><div class="colors" id="pf-colors"></div></div>
+      <div class="dim2" style="margin-top:auto;font-size:16px;text-align:center" id="pf-server"></div>
+    </div>
+    <div class="right">
+      <div class="stats" id="pf-stats"></div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <span class="subtitle" style="font-size:18px">Habilidades</span>
+        <div class="skills" id="pf-skills"></div>
+        <div class="dim2" style="font-size:16px" id="pf-skillhint"></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <span class="subtitle" style="font-size:18px">Reputação comercial</span>
+        <div class="rep" id="pf-rep"></div>
+        <span class="subtitle" style="font-size:18px;margin-top:4px">Conquistas <span class="dim" style="font-family:'VT323'" id="pf-achcount"></span></span>
+        <div class="ach" id="pf-ach"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="held" class="hidden"></div>
+<div id="tooltip" class="hidden"></div>
+<div id="toast" class="hidden"></div>
+
+<script src="/client.js"></script>
+</body>
+</html>
