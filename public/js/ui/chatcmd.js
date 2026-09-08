@@ -7,11 +7,11 @@
 import { state } from '../state.js';
 import { $, esc } from '../utils.js';
 
-const MAX = 8;
+const MAX = 12;   // cabe a lista inteira de comandos e de itens; o resto rola
 
 // list: sugestões visíveis · sel: destacada · start: onde a substituição começa
 // moved: o jogador escolheu com as setas (só então Enter completa em vez de enviar)
-const ac = { open: false, list: [], rest: 0, sel: 0, start: 0, moved: false, sig: '', desc: '' };
+const ac = { open: false, list: [], rest: 0, sel: 0, start: 0, moved: false, sig: '' };
 
 const norm = s => Game.normCmd(s);
 const input = () => $('#chatinput');
@@ -44,7 +44,7 @@ function coordOptions(argName) {
   return [{ value: String(tile), hint: `sua posição (${argName})` }];
 }
 
-function optionsFor(arg) {
+function optionsForArg(arg) {
   switch (arg.type) {
     case 'player': return playerOptions();
     case 'item':   return itemOptions();
@@ -55,15 +55,31 @@ function optionsFor(arg) {
   }
 }
 
+// Numa posição que aceita mais de um tipo (o `/tp`, que tem várias formas),
+// junta as sugestões de todos eles — jogadores antes de coordenadas.
+function optionsFor(args) {
+  const ordered = [...args].sort((a, b) => (a.type === 'player' ? 0 : 1) - (b.type === 'player' ? 0 : 1));
+  const out = [];
+  for (const arg of ordered) {
+    for (const o of optionsForArg(arg)) if (!out.some(x => x.value === o.value)) out.push(o);
+  }
+  return out;
+}
+
 /* ---------- montagem da lista ---------- */
 
 // "/give <jogador> <item> [quantidade]" com o argumento atual em destaque.
-function signature(def, active) {
-  const parts = def.args.map((a, i) => {
-    const label = a.opt ? `[${a.name}]` : `<${a.name}>`;
-    return i === active ? `<b>${esc(label)}</b>` : esc(label);
-  });
-  return `<span class="cmd">/${esc(def.name)}</span> ${parts.join(' ')}`;
+// Comandos com várias formas mostram uma linha por forma ainda compatível —
+// a lista vai encolhendo conforme se digita, ensinando a sintaxe.
+function signature(def, forms, active) {
+  return forms.map(f => {
+    const parts = f.args.map((a, i) => {
+      const label = a.opt ? `[${a.name}]` : `<${a.name}>`;
+      return i === active ? `<b>${esc(label)}</b>` : esc(label);
+    });
+    const d = f.desc || (forms.length === 1 ? def.desc : '');
+    return `<div class="form"><span><span class="cmd">/${esc(def.name)}</span> ${parts.join(' ')}</span>${d ? `<span class="d">${esc(d)}</span>` : ''}</div>`;
+  }).join('');
 }
 
 // Ordena por relevância (começa com > contém) e corta em MAX,
@@ -99,24 +115,23 @@ export function refreshComplete() {
       hint: c.desc,
       admin: c.admin,
     }));
-    return show(match(list, prefix), 'Comandos', 'Tab completa · ↑↓ escolhe · Esc fecha', ctx.start);
+    return show(match(list, prefix), '<div class="form">Comandos</div>', ctx.start);
   }
 
-  const list = match(optionsFor(ctx.arg).map(o => ({ ...o, insert: o.value })), prefix);
+  const list = match(optionsFor(ctx.args).map(o => ({ ...o, insert: o.value })), prefix);
 
   // Texto livre (mensagem, motivo): sem sugestões. Nos comandos de servidor
   // mantemos a assinatura à vista; no chat comum, sai da frente.
   if (!list.length && ctx.arg.type === 'text' && ctx.def.scope !== 'server') return close();
 
-  show(list, signature(ctx.def, ctx.index), ctx.def.desc, ctx.start);
+  show(list, signature(ctx.def, ctx.forms, ctx.index), ctx.start);
 }
 
-function show(list, sig, desc, start) {
+function show(list, sig, start) {
   ac.open = true;
   ac.list = list;
   ac.rest = list.rest || 0;
   ac.sig = sig;
-  ac.desc = desc;
   ac.start = start;
   if (ac.sel >= list.length) ac.sel = 0;
   if (!list.length) { ac.sel = 0; ac.moved = false; }
@@ -143,7 +158,7 @@ function render() {
   }).join('');
 
   el.innerHTML =
-    `<div class="sig">${ac.sig}${ac.desc ? ` <span class="d">${esc(ac.desc)}</span>` : ''}</div>` +
+    `<div class="sig">${ac.sig}</div>` +
     (opts ? `<div class="opts">${opts}</div>` : '') +
     `<div class="tip">${ac.list.length ? 'Tab completa · ↑↓ escolhe · Esc fecha' : 'digite o valor · Esc fecha'}${ac.rest ? ` <span class="more">+${ac.rest} sem caber na lista</span>` : ''}</div>`;
   el.classList.remove('hidden');

@@ -41,7 +41,7 @@ Variáveis de ambiente:
 | `SERVER_NAME`  | Vale do Norte   | nome mostrado no menu |
 | `MAX_PLAYERS`  | 50              | limite de jogadores |
 | `PEERS`        | (vazio)         | URLs de outros servidores, separadas por vírgula, para aparecerem na lista do menu |
-| `ADMINS`       | (vazio)         | nomes de jogadores com acesso a `/kick`, `/give` e `/place`, separados por vírgula |
+| `ADMINS`       | (vazio)         | nomes de jogadores com acesso aos comandos de administrador, separados por vírgula |
 
 Exemplo com dois servidores na mesma máquina:
 
@@ -74,12 +74,24 @@ valores de cada campo (jogadores online, itens, blocos, coordenadas):
 | `/kick <jogador> [motivo]` | expulsa um jogador do servidor |
 | `/give <jogador> <item> [quantidade]` | entrega um item (1 se a quantidade for omitida) |
 | `/place <x> <z> <bloco>`  | coloca um bloco em qualquer ponto do mundo |
+| `/tp <x> <z>`             | você vai para a coordenada |
+| `/tp <destino>`           | você vai até o jogador |
+| `/tp <jogador> <destino>` | leva um jogador até outro |
+| `/tp <jogador> <x> <z>`   | leva um jogador para a coordenada |
 
-Os três últimos são de administrador: só funcionam para nomes listados em
-`ADMINS` e nem aparecem no autocompletar de quem não é. Itens e blocos aceitam
+`/kick`, `/give`, `/place` e `/tp` são de administrador: só funcionam para
+nomes listados em `ADMINS` e nem aparecem no autocompletar de quem não é. Itens e blocos aceitam
 o nome com ou sem acento (`bau` acha `baú`) e com espaços (`placa de ferro`).
 `/place` não tem limite de alcance: a única recusa é colocar um bloco sólido
 num tile onde há um jogador de pé.
+
+O `/tp` escolhe a forma pelo formato dos argumentos: **argumento só de dígitos
+é coordenada, qualquer outro é nome de jogador** (ou seja, um jogador chamado
+só com números não pode ser alvo do `/tp`). Enquanto se digita, o autocompletar
+mostra as formas ainda possíveis e vai eliminando as que não encaixam mais.
+Se a coordenada pedida cair na água, numa árvore ou dentro de um muro, o
+teleporte vai para o chão firme mais próximo (até 6 tiles) — senão quem chegasse
+lá ficaria travado, sem conseguir andar.
 
 ```
 ADMINS="Miguel,Chefe" npm start

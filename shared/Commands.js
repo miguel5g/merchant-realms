@@ -122,7 +122,33 @@
         { name: 'bloco', type: 'block', greedy: true },
       ],
     },
+    {
+      /* Um comando pode ter várias formas (assinaturas alternativas): a forma
+         é escolhida pela quantidade de argumentos e pelo formato de cada um
+         — argumento só de dígitos é coordenada, o resto é nome de jogador.
+         Os nomes se repetem de propósito entre as formas: quem executa lê
+         `jogador` (ausente = quem digitou) e `destino` (ausente = x/z). */
+      name: 'tp', aliases: ['teleport'], scope: 'server', admin: true,
+      desc: 'Teleporta você ou outro jogador.',
+      forms: [
+        { desc: 'você vai para a coordenada',
+          args: [{ name: 'x', type: 'coord' }, { name: 'z', type: 'coord' }] },
+        { desc: 'você vai até o jogador',
+          args: [{ name: 'destino', type: 'player' }] },
+        { desc: 'leva um jogador até outro',
+          args: [{ name: 'jogador', type: 'player' }, { name: 'destino', type: 'player' }] },
+        { desc: 'leva um jogador para a coordenada',
+          args: [{ name: 'jogador', type: 'player' }, { name: 'x', type: 'coord' }, { name: 'z', type: 'coord' }] },
+      ],
+    },
   ];
+
+  // Toda definição passa a ter forms[]; quem tem uma assinatura só ganha uma
+  // forma implícita, para o resto do código não precisar tratar os dois casos.
+  for (const c of COMMANDS) {
+    c.forms = c.forms || [{ args: c.args }];
+    c.args = c.forms[0].args;
+  }
 
   const COMMAND_BY_NAME = {};
   for (const c of COMMANDS) {
@@ -132,9 +158,10 @@
 
   const findCommand = name => COMMAND_BY_NAME[norm(name)] || null;
 
-  // "/give <jogador> <item> [quantidade]"
-  function usage(def) {
-    return `/${def.name}${def.args.map(a => a.opt ? ` [${a.name}]` : ` <${a.name}>`).join('')}`;
+  // "/give <jogador> <item> [quantidade]" — sem forma, lista todas as do comando.
+  function usage(def, form) {
+    const one = f => `/${def.name}${f.args.map(a => a.opt ? ` [${a.name}]` : ` <${a.name}>`).join('')}`;
+    return form ? one(form) : def.forms.map(one).join(' · ');
   }
 
   // Comandos visíveis para quem pede (admin vê tudo).
@@ -162,9 +189,10 @@
     end: toks[toks.length - 1].end,
   } : null;
 
-  // Distribui os tokens entre os argumentos do comando.
-  // Devolve um array paralelo a def.args (posição sem token = null).
-  function assignArgs(def, tokens) {
+  // Distribui os tokens entre os argumentos de uma forma.
+  // Devolve um array paralelo a form.args (posição sem token = null).
+  function assignArgs(form, tokens) {
+    const def = form;                       // uma definição de comando também serve (tem .args)
     const slots = def.args.map(() => null);
     const tailIdx = def.args.findIndex(a => a.tail);
     let usable = tokens.length;
@@ -191,6 +219,40 @@
   }
 
 
+  /* ---------- escolha da forma ----------
+     Um token só de dígitos (com sinal opcional) é coordenada; qualquer outro
+     é nome de jogador. Enquanto o token ainda está sendo digitado a regra é
+     frouxa — "1" pode virar tanto 12 quanto o nome "1Bob". */
+  const isCoordLike = v => /^-?\d+$/.test(v);
+
+  function tokenFits(arg, value, partial) {
+    if (arg.type === 'coord') return partial ? /^-?\d*$/.test(value) : isCoordLike(value);
+    if (arg.type === 'player') return partial ? true : !isCoordLike(value);
+    return true;
+  }
+
+  // Formas do comando compatíveis com o que já foi digitado.
+  // partialIdx = token que ainda está sob o cursor (-1 quando não há).
+  function formsFor(def, tokens, partialIdx = -1) {
+    if (def.forms.length === 1) return def.forms;   // comando de assinatura única: nada a escolher
+    return def.forms.filter(f => {
+      const greedy = f.args.some(a => a.greedy);
+      if (!greedy && tokens.length > f.args.length) return false;
+      for (let i = 0; i < tokens.length && i < f.args.length; i++) {
+        if (f.args[i].greedy) break;
+        if (!tokenFits(f.args[i], tokens[i].value, i === partialIdx)) return false;
+      }
+      return true;
+    });
+  }
+
+  // Entre as compatíveis, a forma que os tokens preenchem por inteiro.
+  function pickForm(forms, tokens) {
+    const required = f => f.args.filter(a => !a.opt).length;
+    const fits = f => tokens.length >= required(f) && (f.args.some(a => a.greedy) || tokens.length <= f.args.length);
+    return forms.find(fits) || forms[0];
+  }
+
   // Um argumento greedy só termina quando o texto já é um valor completo:
   // "placa" ainda pode virar "placa de ferro", então continua aberto.
   function isComplete(arg, text) {
@@ -200,11 +262,32 @@
     return true;
   }
 
+  // Dentro de qual argumento de uma forma o cursor está? { index, arg, start } ou null.
+  function argInForm(form, tokens, caret) {
+    const slots = assignArgs(form, tokens);
+    const at = (index, start) => ({ index, arg: form.args[index], start });
+
+    for (let i = 0; i < form.args.length; i++) {
+      const s = slots[i];
+      if (s && caret >= s.start && caret <= s.end) return at(i, s.start);
+    }
+
+    // Cursor solto depois do último token (acabou de digitar um espaço).
+    let last = -1;
+    for (let i = 0; i < form.args.length; i++) if (slots[i]) last = i;
+    if (last >= 0 && form.args[last].greedy && !isComplete(form.args[last], slots[last].text)) {
+      return at(last, slots[last].start);
+    }
+    const next = last + 1;
+    return next < form.args.length ? at(next, caret) : null;
+  }
+
   /* Onde está o cursor dentro da linha? Base do autocompletar.
      Devolve { kind:'cmd', start } enquanto se digita o nome do comando,
-     { kind:'arg', def, index, arg, start } dentro de um argumento
-     (start = posição onde o valor começa, para substituir ao completar),
-     ou null quando a linha não é um comando. */
+     { kind:'arg', def, forms, index, args, arg, start } dentro de um argumento
+     (start = onde o valor começa, para substituir ao completar; args = todos
+     os argumentos possíveis ali, um por forma ainda compatível), ou null
+     quando a linha não é um comando. */
   function argAt(text, caret) {
     if (!String(text).startsWith('/')) return null;
     const split = splitCommand(text);
@@ -213,42 +296,48 @@
 
     const def = findCommand(split.name);
     if (!def) return null;
-    const slots = assignArgs(def, split.tokens);
-    const at = (index, start) => ({ kind: 'arg', def, index, arg: def.args[index], start });
 
-    for (let i = 0; i < def.args.length; i++) {
-      const s = slots[i];
-      if (s && caret >= s.start && caret <= s.end) return at(i, s.start);
-    }
+    const partialIdx = split.tokens.findIndex(t => caret >= t.start && caret <= t.end);
+    const forms = formsFor(def, split.tokens, partialIdx);
+    if (!forms.length) return null;
 
-    // Cursor solto depois do último token (acabou de digitar um espaço).
-    let last = -1;
-    for (let i = 0; i < def.args.length; i++) if (slots[i]) last = i;
-    if (last >= 0 && def.args[last].greedy && !isComplete(def.args[last], slots[last].text)) {
-      return at(last, slots[last].start);
+    const hits = [];
+    for (const f of forms) {
+      const h = argInForm(f, split.tokens, caret);
+      if (h) hits.push(h);
     }
-    const next = last + 1;
-    return next < def.args.length ? at(next, caret) : null;
+    if (!hits.length) return null;
+
+    const args = [];
+    for (const h of hits) if (!args.some(a => a.type === h.arg.type && a.name === h.arg.name)) args.push(h.arg);
+    return { kind: 'arg', def, forms, index: hits[0].index, args, arg: hits[0].arg, start: hits[0].start };
   }
 
-  // Análise completa, usada pelo servidor. Devolve { ok, def, values } ou { ok:false, error }.
+  // Análise completa, usada pelo servidor. Devolve { ok, def, form, values } ou { ok:false, error }.
   function parseCommand(text) {
     const split = splitCommand(text);
     if (!split) return { ok: false, error: 'Comando inválido.' };
     const def = findCommand(split.name);
     if (!def) return { ok: false, error: `Comando desconhecido: "/${split.name}".` };
 
-    const slots = assignArgs(def, split.tokens);
+    const forms = formsFor(def, split.tokens);
+    if (!forms.length) return { ok: false, def, error: `Uso: ${usage(def)}` };
+    const form = pickForm(forms, split.tokens);
+
+    const slots = assignArgs(form, split.tokens);
     const values = {};
-    for (let i = 0; i < def.args.length; i++) {
-      const a = def.args[i], s = slots[i];
+    for (let i = 0; i < form.args.length; i++) {
+      const a = form.args[i], s = slots[i];
       if (!s || !s.text) {
-        if (!a.opt) return { ok: false, def, error: `Faltou <${a.name}>. Uso: ${usage(def)}` };
+        // Sem nenhum argumento num comando de várias formas, apontar um campo
+        // específico confunde: melhor mostrar as assinaturas possíveis.
+        const falta = split.tokens.length || def.forms.length === 1 ? `Faltou <${a.name}>. ` : '';
+        if (!a.opt) return { ok: false, def, error: `${falta}Uso: ${usage(def)}` };
         continue;
       }
       values[a.name] = s.text;
     }
-    return { ok: true, def, values };
+    return { ok: true, def, form, values };
   }
 
   return {
@@ -263,6 +352,7 @@
     usage,
     splitCommand,
     assignArgs,
+    formsFor,
     argAt,
     parseCommand,
     resolveItem,

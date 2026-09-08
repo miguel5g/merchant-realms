@@ -147,10 +147,12 @@ input:focus { box-shadow:0 0 0 2px var(--gold); }
 #chatbox .entry { position:relative; }
 #chat-ac { position:absolute; left:0; right:0; bottom:100%; z-index:2; background:rgba(18,21,15,.98); box-shadow:0 0 0 2px var(--line), 0 -2px 0 var(--ink); display:flex; flex-direction:column; }
 #chat-ac .sig { padding:7px 10px; font-size:17px; color:var(--dim); border-bottom:2px solid var(--line2); }
+#chat-ac .sig .form { display:flex; align-items:baseline; justify-content:space-between; gap:12px; padding:1px 0; }
+#chat-ac .sig .form + .form { border-top:1px solid var(--line2); padding-top:3px; margin-top:2px; }
+#chat-ac .sig .form .d { color:var(--dim2); font-size:15px; text-align:right; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 #chat-ac .sig .cmd { color:var(--gold); }
 #chat-ac .sig b { color:var(--text); font-weight:normal; }
-#chat-ac .sig .d { color:var(--dim2); font-size:15px; }
-#chat-ac .opts { display:flex; flex-direction:column; max-height:190px; overflow-y:auto; }
+#chat-ac .opts { display:flex; flex-direction:column; max-height:210px; overflow-y:auto; }
 #chat-ac .opt { display:flex; align-items:center; gap:8px; padding:5px 10px; font-size:18px; cursor:pointer; }
 #chat-ac .opt.on { background:var(--raised); }
 #chat-ac .opt.on .v { color:var(--gold); }

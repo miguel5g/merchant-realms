@@ -147,6 +147,21 @@ function kick(target, reason, by) {
   try { target.socket.close(4001, 'kicked'); } catch { /* já caiu */ }
 }
 
+// Tile caminhável mais próximo de (x, z) — teleportar para dentro de água ou
+// de um muro deixaria o jogador preso, já que ele não conseguiria mais andar.
+function freeTileNear(x, z, raio = 6) {
+  if (world.walkable(x, z)) return [x, z];
+  for (let r = 1; r <= raio; r++) {
+    for (let dx = -r; dx <= r; dx++) {
+      for (let dz = -r; dz <= r; dz++) {
+        if (Math.max(Math.abs(dx), Math.abs(dz)) !== r) continue;   // só a borda do anel
+        if (world.walkable(x + dx, z + dz)) return [x + dx, z + dz];
+      }
+    }
+  }
+  return null;
+}
+
 const commands = {
   kick(p, v) {
     const target = findByName(v.jogador);
@@ -191,12 +206,58 @@ const commands = {
     sys(`${G.BLOCK_LABEL[name]} colocado em ${x}, ${y}.`, p);
     console.log(`place: ${p.name} -> ${name} em ${x},${y}`);
   },
+
+  /* As quatro formas do /tp caem todas aqui: `jogador` ausente significa quem
+     digitou, e `destino` ausente significa que o alvo são as coordenadas. */
+  tp(p, v) {
+    const alvo = v.jogador === undefined ? p : findByName(v.jogador);
+    if (!alvo) return sys(`Ninguém online com o nome "${v.jogador}".`, p);
+
+    let x, y, onde, destino = null;
+
+    if (v.destino !== undefined) {
+      destino = findByName(v.destino);
+      if (!destino) return sys(`Ninguém online com o nome "${v.destino}".`, p);
+      if (destino === alvo) return sys(alvo === p ? 'Você já está onde queria chegar.' : `${alvo.name} já está lá.`, p);
+      x = destino.x; y = destino.y;
+      onde = `até ${destino.name}`;
+    } else {
+      const tx = Number(v.x), tz = Number(v.z);
+      if (!Number.isInteger(tx) || !Number.isInteger(tz) || Math.abs(tx) > COORD_LIMIT || Math.abs(tz) > COORD_LIMIT) {
+        return sys('Coordenadas inválidas — use números inteiros de tile (ex: /tp 12 -40).', p);
+      }
+      const spot = freeTileNear(tx, tz);
+      if (!spot) return sys(`Não há chão firme perto de ${tx}, ${tz}.`, p);
+      const [fx, fz] = spot;
+      x = fx * G.TILE + G.TILE / 2; y = fz * G.TILE + G.TILE / 2;
+      onde = fx === tx && fz === tz
+        ? `para ${tx}, ${tz}`
+        : `para ${fx}, ${fz} (${tx}, ${tz} não dava pé)`;
+    }
+
+    alvo.x = x; alvo.y = y; alvo.tpAt = Date.now();
+    send(alvo, 'pos', { x, y });
+    dirty = true;
+
+    if (alvo === p) {
+      sys(`Você foi ${onde}.`, p);
+    } else {
+      sys(`${alvo.name} foi ${onde}.`, p);
+      sys(`Você foi teletransportado ${onde} por ${p.name}.`, alvo);
+    }
+    if (destino && destino !== p && destino !== alvo) sys(`${alvo.name} foi teletransportado até você.`, destino);
+    console.log(`tp: ${p.name} -> ${alvo.name} ${onde}`);
+  },
 };
 
 /* ---------- handlers ---------- */
 const handlers = {
   move(p, m) {
     if (typeof m.x !== 'number' || typeof m.y !== 'number') return;
+    // Logo após um teleporte, o cliente ainda manda a posição antiga (ele só
+    // souber da nova quando o 'pos' chegar). Nesse intervalo o servidor manda
+    // de volta onde ele realmente está, em vez de desfazer o teleporte.
+    if (Date.now() - p.tpAt < 250) return send(p, 'pos', { x:p.x, y:p.y });
     if (Math.hypot(m.x - p.x, m.y - p.y) > G.TILE * 4) return send(p, 'pos', { x:p.x, y:p.y });
     const tx = Math.floor(m.x / G.TILE), ty = Math.floor(m.y / G.TILE);
     if (!world.walkable(tx, ty)) return send(p, 'pos', { x:p.x, y:p.y });
@@ -358,7 +419,7 @@ app.register(async function (f) {
     const saved = profiles[name] || profiles[name.replace(/_/g, ' ')] || {};
     const p = {
       id:nextId++, name, socket, sel:0, lastMine:0, energy:100, tradeId:null, tradeReqFrom:null, joinedAt:Date.now(), lastSaveMs:Date.now(),
-      admin: isAdmin(name), kicked: null,
+      admin: isAdmin(name), kicked: null, tpAt: 0,
       col: saved.col || G.PALETTE[nextId % G.PALETTE.length],
       x: saved.x ?? sx, y: saved.y ?? sy,
       inv: new G.Inventory(32), equip: saved.equip || { pick:null, axe:null },
