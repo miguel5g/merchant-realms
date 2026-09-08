@@ -98,9 +98,56 @@ Quem é expulso volta ao menu com o motivo escrito na tela, em vez do
 "Desconectado do servidor." genérico. No chat, quem foi expulso aparece como
 expulso — não mais como se tivesse saído por conta própria.
 
+**novo · Carvão: o minério comum da montanha**
+
+Terceiro minério do jogo, ao lado do ferro e do cobre. Aparece só na rocha
+alta, em veios com um canal de ruído próprio, e é o **mais comum dos três**:
+ocupa cerca de **5,6% do mundo**, contra 4,3% do ferro e 3,7% do cobre — o
+chão de pedra transitável da montanha cede espaço a ele (9,7% → 4,0%), mas as
+faixas de ferro e de cobre continuam exatamente como eram.
+
+- Cada bloco rende **10 carvões** e some ao esvaziar. Cada unidade leva
+  **0,42s** (0,25s com picareta), mais rápida que a do ferro e a do cobre —
+  são 4,2s por bloco inteiro, contra 6,4s de um bloco de ferro.
+- Empilha **50 por slot**, como qualquer material, e conta para a perícia de
+  **Mineração**, igual aos outros minérios.
+- **Não é fundido em barra**: existe para ser queimado. Vai ser o combustível
+  da fornalha.
+- No mundo e no minimapa aparece como pepitas em cinza-ardósia escuro; no
+  inventário tem ícone próprio na mesma cor.
+- Entra no `/place carvao` e no `/give <jogador> carvao` sem nenhum ajuste no
+  autocompletar.
+
+**correcao · Mineração parava em silêncio com o inventário cheio**
+
+Segurar o botão direito sobre um recurso que não cabia no inventário não fazia
+nada: nenhum aviso, nenhum bloco quebrado, e o cursor ainda por cima ficava
+**amarelo**, dizendo que dava para minerar. O painel de inspeção era o único
+lugar que avisava ("inventário cheio"), e quem não estivesse olhando para ele
+só via a mineração não acontecer.
+
+O problema aparecia de vez em quando com item já conhecido e passou a aparecer
+sempre com **item novo**: um inventário de 32 slots ocupados ainda aceita mais
+ferro se houver uma pilha de ferro pela metade, mas não tem onde começar a
+primeira pilha de carvão. Foi exatamente assim que o carvão apareceu como
+"minerando e não vem nada".
+
+- O cursor deixa de ficar amarelo quando o item não cabe.
+- Um aviso na tela diz qual recurso não coube, no máximo uma vez a cada 4s.
+
 ---
 
 ## Notas técnicas (não vão para a changelog)
+
+**Como adicionar um novo minério:** três entradas em
+[shared/constants.js](shared/constants.js) — o id em `T`, o item em `ITEMS` e o
+recurso em `RES` (com `skill:'ore'`) — mais a faixa de geração em `baseTile()`
+([shared/World.js](shared/World.js)), o nome do bloco em `BLOCK_LABELS`
+([shared/Commands.js](shared/Commands.js)) e a cor do minimapa em `MMCOL`
+([public/js/renderer.js](public/js/renderer.js)). O `drawTile()` desenha
+qualquer tile com `skill:'ore'` como pepitas na cor do item, então minério novo
+já nasce com arte. Tudo o mais — limite de pilha, painel de inspeção, tooltip,
+perícia, valor de troca, persistência — sai sozinho de `RES`/`ITEMS`.
 
 **Como adicionar um novo blueprint:** basta uma entrada em `GENERATORS`, em
 [shared/constants.js](shared/constants.js). O item de inventário, a receita paga

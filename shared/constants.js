@@ -32,6 +32,7 @@
     ROCK: 11,
     IRON: 12,
     COPPER: 13,
+    COAL: 14,
     WALL: 20,
     CHEST: 21,
     MADEIREIRA: 23,
@@ -44,6 +45,7 @@
     pedra:              { label:'Pedra',               desc:'Vem de rochas. Serve para muros e ferramentas.',         col:'#8c8c86', value:1 },
     ferro:              { label:'Minério de ferro',    desc:'Bruto. Vira placa de ferro na fabricação.',              col:'#a0785a', value:2 },
     cobre:              { label:'Minério de cobre',    desc:'Bruto. Vira placa de cobre na fabricação.',              col:'#c77a4a', value:2 },
+    carvão:             { label:'Carvão',              desc:'Queima por muito tempo. Combustível da fornalha — não vira barra.', col:'#4a4550', value:2 },
     'placa de ferro':   { label:'Placa de ferro',      desc:'Componente básico de máquinas.',                         col:'#c4c6ce', value:5 },
     'placa de cobre':   { label:'Placa de cobre',      desc:'Componente de fiação e circuitos.',                      col:'#e0925c', value:5 },
     engrenagem:         { label:'Engrenagem',          desc:'Peça mecânica feita de placas de ferro.',                col:'#acb0ba', value:12 },
@@ -61,6 +63,7 @@
     [T.ROCK]:   { name:'Rocha',               item:'pedra',   amount:8,  time:370, tool:'pick', skill:'stone' },
     [T.IRON]:   { name:'Minério de ferro',    item:'ferro',   amount:12, time:530, tool:'pick', skill:'ore' },
     [T.COPPER]: { name:'Minério de cobre',    item:'cobre',   amount:12, time:530, tool:'pick', skill:'ore' },
+    [T.COAL]:   { name:'Carvão',              item:'carvão',  amount:10, time:420, tool:'pick', skill:'ore' },
     [T.WALL]:   { name:'Muro de pedra',       item:'muro',    amount:1,  time:130, built:true },
     [T.CHEST]:  { name:'Baú',                 item:'baú',     amount:1,  time:130, built:true },
   };

@@ -40,6 +40,10 @@
       if (e > 0.66) {
         if (r > 0.62) return T.IRON;
         if (r < 0.36) return T.COPPER;
+        // Carvão: canal de ruído próprio dentro da rocha, mais largo que as
+        // faixas de ferro e cobre — é o minério comum da montanha.
+        const c = this.noise(x * 0.16 + 900, y * 0.16 + 900);
+        if (c > 0.47) return T.COAL;
         return T.STONE;
       }
       if (r > 0.64) return T.TREE;

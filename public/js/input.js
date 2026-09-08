@@ -3,7 +3,7 @@
    ============================================================ */
 
 import { state } from './state.js';
-import { $ } from './utils.js';
+import { $, toast } from './utils.js';
 import { send } from './network.js';
 import { uiOpen } from './ui/windows.js';
 import { renderHotbar } from './ui/hud.js';
@@ -106,11 +106,24 @@ export function genStock(tx, ty) {
 // responde com a quantidade real e a coleta destrava sozinha.
 const RESYNC_MS = 1000;
 
+// Aviso de inventário cheio: sem isso, segurar o botão direito num recurso que
+// não cabe não faz absolutamente nada — nem mensagem, nem bloco quebrado.
+// Aparece sobretudo com item novo, que não tem pilha começada onde encaixar.
+let lastFullWarn = 0;
+const FULL_WARN_MS = 4000;
+
 export function handleMining() {
   if (!state.world) return;
   const [tx, ty] = mouseTile();
   const res = harvestable(tx, ty);
-  if (!mouseIsPressed || mouseButton !== RIGHT || overUI() || !inReach(tx, ty) || !res || !state.player.inv.hasSpace(res.item) || state.player.energy < 1) {
+  const mining = mouseIsPressed && mouseButton === RIGHT && !overUI();
+
+  if (mining && res && inReach(tx, ty) && !state.player.inv.hasSpace(res.item) && millis() - lastFullWarn > FULL_WARN_MS) {
+    lastFullWarn = millis();
+    toast(`Inventário cheio — não há onde pôr ${Game.ITEMS[res.item]?.label.toLowerCase() || res.item}.`);
+  }
+
+  if (!mining || !inReach(tx, ty) || !res || !state.player.inv.hasSpace(res.item) || state.player.energy < 1) {
     state.mining.t0 = 0;
     return;
   }

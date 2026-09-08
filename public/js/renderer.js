@@ -32,6 +32,7 @@ function initPalette() {
     [T.ROCK]: '#686862',
     [T.IRON]: '#a0785a',
     [T.COPPER]: '#c77a4a',
+    [T.COAL]: '#4a4550',
     [T.WALL]: '#c9b79c',
     [T.CHEST]: '#966432',
     [T.MADEIREIRA]: '#6b4a2f'
@@ -186,8 +187,9 @@ export function drawTile(g, t, px, py, wx, wy) {
     g.ellipse(px + c, py + c + 3, 24, 18);
     g.fill(130, 130, 124);
     g.ellipse(px + c - 3, py + c, 14, 10);
-  } else if (t === T.IRON || t === T.COPPER) {
-    g.fill(Game.ITEMS[t === T.IRON ? 'ferro' : 'cobre'].col);
+  } else if (Game.RES[t]?.skill === 'ore') {
+    // Veio de minério: pepitas na cor do próprio item (ferro, cobre, carvão...)
+    g.fill(Game.ITEMS[Game.RES[t].item].col);
     for (const [ox, oy] of [[-8, -6], [6, -8], [0, 2], [-7, 8], [8, 7]]) {
       g.circle(px + c + ox, py + c + oy, 7);
     }
@@ -251,7 +253,8 @@ export function drawCursor() {
   const res = harvestable(tx, ty);
   const stock = genStock(tx, ty);
   const stored = t === Game.T.CHEST ? chestUsedAt(tx, ty) : 0;   // baú com coisas dentro não quebra
-  const canMine = inReach(tx, ty) && !!res && !(stock !== null && stock <= 0) && !stored;
+  const hasSpace = !res || state.player.inv.hasSpace(res.item);
+  const canMine = inReach(tx, ty) && !!res && hasSpace && !(stock !== null && stock <= 0) && !stored;
   const canOpen = t === Game.T.CHEST && inReach(tx, ty);
   const canPlace = inReach(tx, ty) && item && Game.ITEMS[item]?.place && state.world.placeable(tx, ty) && !overlapsPlayer(tx, ty);
 

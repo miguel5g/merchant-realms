@@ -29,6 +29,7 @@
     [T.ROCK]:   ['rocha',  'Rocha'],
     [T.IRON]:   ['ferro',  'Minério de ferro'],
     [T.COPPER]: ['cobre',  'Minério de cobre'],
+    [T.COAL]:   ['carvao', 'Carvão'],
     [T.WALL]:   ['muro',   'Muro de pedra'],
     [T.CHEST]:  ['bau',    'Baú'],
   };
