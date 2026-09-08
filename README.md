@@ -60,6 +60,11 @@ WASD move · botão esquerdo coloca o item selecionado · botão direito quebra 
 
 Para negociar: T → clique no jogador → Negociar (precisa estar a até 5 tiles).
 
+Para guardar coisas: botão esquerdo em um baú já colocado abre os 48 slots dele
+junto com o seu inventário. Clique pega e solta a pilha, Shift+clique manda a
+pilha inteira para o outro lado, Esc fecha. Cada baú tem seu próprio conteúdo,
+salvo no mundo, e só pode ser quebrado depois de esvaziado.
+
 ## Comandos de chat
 
 Digite `/` no chat para abrir a lista de comandos. O autocompletar sugere os

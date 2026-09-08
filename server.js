@@ -19,11 +19,13 @@ const PLAYERS_FILE = path.join(__dirname, 'players.json');
 
 /* ---------- estado ---------- */
 const world = new G.World(SEED);
+const chests = new Map();       // "x,y" -> Inventory de 48 slots, um por baú colocado
 let epoch = Date.now();
 if (fs.existsSync(WORLD_FILE)) {
   const snap = JSON.parse(fs.readFileSync(WORLD_FILE, 'utf8'));
   world.load(snap); if (snap.epoch) epoch = snap.epoch;
-  console.log(`mundo carregado: ${world.overrides.size} tiles alterados, dia ${G.gameTime(Date.now(), epoch).day}`);
+  loadChests(snap.chests);
+  console.log(`mundo carregado: ${world.overrides.size} tiles alterados, ${chests.size} baús, dia ${G.gameTime(Date.now(), epoch).day}`);
 }
 const genNext = new Map();      // "x,y" -> timestamp do próximo ciclo de produção
 for (const [x, y] of world.generators()) armGenerator(x, y);
@@ -77,6 +79,68 @@ function tickGenerators() {
     world.setAmount(x, y, Math.min(def.cap, stock + def.n));
     broadcast('tile', tileMsg(x, y));
     dirty = true;
+  }
+}
+
+/* ---------- baús ----------
+   O conteúdo mora aqui, indexado pelo tile, e não no item: cada baú posto no
+   mundo tem seu próprio inventário, salvo junto com world.json. O cliente
+   recebe só a contagem de pilhas de cada baú (para o painel de inspeção) e o
+   conteúdo completo apenas do baú que ele tem aberto. */
+const CH = 200;                 // deslocamento dos índices de slot do baú nas mensagens
+
+function ckey(x, y) { return `${x},${y}`; }
+function isChest(x, y) { return world.tile(x, y) === G.T.CHEST; }
+function chestItem(item) { return G.ITEMS[item]?.place === G.T.CHEST; }
+function chestUsed(x, y) { const c = chests.get(ckey(x, y)); return c ? c.used() : 0; }
+function chestAt(x, y) {
+  const k = ckey(x, y);
+  if (!chests.has(k)) chests.set(k, new G.Inventory(G.CHEST_SLOTS));
+  return chests.get(k);
+}
+function chestViewers(x, y) {
+  const out = [];
+  for (const o of players.values()) if (o.chest && o.chest.x === x && o.chest.y === y) out.push(o);
+  return out;
+}
+function closeChest(p, reason) {
+  if (!p.chest) return;
+  p.chest = null;
+  send(p, 'chest_close', { reason });
+}
+// Baú aberto por p, revalidado (o tile ainda é um baú e ele continua perto).
+function openChestOf(p) {
+  if (!p.chest) return null;
+  const { x, y } = p.chest;
+  if (!isChest(x, y)) { closeChest(p, 'gone'); return null; }
+  if (G.dist(p.x, p.y, x * G.TILE + G.TILE / 2, y * G.TILE + G.TILE / 2) > G.CHEST_DIST) { closeChest(p, 'far'); return null; }
+  return chestAt(x, y);
+}
+// Reenvia o conteúdo para quem está com ele aberto e a contagem para todo mundo.
+function pushChest(x, y) {
+  const slots = chestAt(x, y).slots;
+  for (const o of chestViewers(x, y)) send(o, 'chest', { x, y, slots });
+  broadcast('chest_n', { x, y, n: chestUsed(x, y) });
+  dirty = true;
+}
+// Baú destruído ou sobrescrito: apaga o conteúdo e fecha a janela de quem olhava.
+function dropChest(x, y) {
+  const had = chests.delete(ckey(x, y));
+  const viewers = chestViewers(x, y);
+  for (const o of viewers) closeChest(o, 'gone');
+  if (had || viewers.length) broadcast('chest_n', { x, y, n: 0 });
+}
+function chestCounts() {
+  const out = [];
+  for (const [k, c] of chests) if (c.used()) out.push([...k.split(',').map(Number), c.used()]);
+  return out;
+}
+function loadChests(list) {
+  for (const [x, y, slots] of list || []) {
+    if (!isChest(x, y)) { console.log(`baú salvo em ${x},${y} sem tile de baú — conteúdo descartado`); continue; }
+    const c = new G.Inventory(G.CHEST_SLOTS);
+    (slots || []).slice(0, G.CHEST_SLOTS).forEach((s, i) => { if (s && G.ITEMS[s.item] && !chestItem(s.item)) c.slots[i] = s; });
+    if (c.used()) chests.set(ckey(x, y), c);
   }
 }
 
@@ -198,8 +262,11 @@ const commands = {
     const tile = G.BLOCKS[name];
     const blocked = !G.tileWalkable(tile) && playerOnTile(x, y);
     if (blocked) return sys(`${blocked.name} está em cima de ${x}, ${y} — não dá para bloquear o tile.`, p);
+    const guardado = chestUsed(x, y);
+    if (guardado) return sys(`O baú em ${x}, ${y} tem ${guardado} pilha${guardado > 1 ? 's' : ''} dentro — esvazie antes de substituí-lo.`, p);
 
     world.set(x, y, tile);
+    if (tile !== G.T.CHEST) dropChest(x, y);
     armGenerator(x, y);
     broadcast('tile', tileMsg(x, y));
     dirty = true;
@@ -272,9 +339,19 @@ const handlers = {
     const res = G.RES[world.tile(x, y)];
     if (!res || !p.inv.hasSpace(res.item) || p.energy < 1) return;
     const nowMs = Date.now();
+    // Baú com coisas dentro não quebra. Devolve a contagem real para o cliente,
+    // que pode estar defasada e é o que faz o cursor dele bloquear a quebra.
+    const guardado = chestUsed(x, y);
+    if (guardado) {
+      send(p, 'chest_n', { x, y, n: guardado });
+      if (nowMs - p.lastChestWarn > 3000) { p.lastChestWarn = nowMs; sys(`Esvazie o baú antes de quebrá-lo — ainda há ${guardado} pilha${guardado > 1 ? 's' : ''} lá dentro.`, p); }
+      return;
+    }
     if (nowMs - p.lastMine < G.mineTime(res, p.equip) * 0.8) return;
     p.lastMine = nowMs;
+    const wasChest = isChest(x, y);
     const item = world.mine(x, y);
+    if (item && wasChest && !isChest(x, y)) dropChest(x, y);
     // Estrutura geradora sem estoque: devolve o estado real para o cliente
     // re-sincronizar (o cache local dele pode estar defasado).
     if (!item) { if (res.gen) send(p, 'tile', tileMsg(x, y)); return; }
@@ -299,6 +376,48 @@ const handlers = {
     broadcast('tile', tileMsg(x, y));
     sendInv(p); touch(p);
   },
+  /* ---------- baús ----------
+     Índices de slot: 0..31 são do inventário do jogador e CH+0..CH+47 do baú,
+     então um só handler serve para mover dentro de um lado ou entre os dois. */
+  chest_open(p, m) {
+    const { x, y } = m;
+    if (!Number.isInteger(x) || !Number.isInteger(y)) return;
+    if (!isChest(x, y) || !G.inReach(p.x, p.y, x, y)) return;
+    p.chest = { x, y };
+    send(p, 'chest', { x, y, slots: chestAt(x, y).slots, open:true });
+  },
+  chest_close(p) { p.chest = null; },
+  chest_move(p, m) {
+    const c = openChestOf(p); if (!c) return;
+    const { from, to } = m;
+    if (!Number.isInteger(from) || !Number.isInteger(to) || from === to) return;
+    const src = from >= CH ? c : p.inv, si = from >= CH ? from - CH : from;
+    const dst = to   >= CH ? c : p.inv, di = to   >= CH ? to   - CH : to;
+    if (si < 0 || si >= src.slots.length || di < 0 || di >= dst.slots.length) return;
+    const s = src.slots[si]; if (!s) return;
+    if (dst === c && chestItem(s.item)) return sys('Um baú não cabe dentro de outro baú.', p);
+    src.transfer(dst, si, di);
+    if (src === p.inv || dst === p.inv) sendInv(p);
+    if (src === c || dst === c) pushChest(p.chest.x, p.chest.y);
+  },
+  // Shift+clique: manda a pilha inteira para o outro lado, empilhando no que já existe.
+  chest_quick(p, m) {
+    const c = openChestOf(p); if (!c) return;
+    const i = m.i;
+    if (!Number.isInteger(i)) return;
+    if (i >= CH) {
+      const si = i - CH;
+      if (si >= c.slots.length || !c.slots[si]) return;
+      if (!c.push(p.inv, si)) return sys('Seu inventário está cheio.', p);
+    } else {
+      if (i < 0 || i >= p.inv.slots.length) return;
+      const s = p.inv.slots[i]; if (!s) return;
+      if (chestItem(s.item)) return sys('Um baú não cabe dentro de outro baú.', p);
+      if (!p.inv.push(c, i)) return sys('O baú está cheio.', p);
+    }
+    sendInv(p); pushChest(p.chest.x, p.chest.y);
+  },
+
   craft(p, m) {
     const r = G.RECIPES[m.k]; if (!r) return;
     let n = Math.min(Math.max(1, m.n | 0), 100), done = 0;
@@ -419,7 +538,7 @@ app.register(async function (f) {
     const saved = profiles[name] || profiles[name.replace(/_/g, ' ')] || {};
     const p = {
       id:nextId++, name, socket, sel:0, lastMine:0, energy:100, tradeId:null, tradeReqFrom:null, joinedAt:Date.now(), lastSaveMs:Date.now(),
-      admin: isAdmin(name), kicked: null, tpAt: 0,
+      admin: isAdmin(name), kicked: null, tpAt: 0, chest: null, lastChestWarn: 0,
       col: saved.col || G.PALETTE[nextId % G.PALETTE.length],
       x: saved.x ?? sx, y: saved.y ?? sy,
       inv: new G.Inventory(32), equip: saved.equip || { pick:null, axe:null },
@@ -435,6 +554,7 @@ app.register(async function (f) {
     send(p, 'init', {
       id:p.id, name:p.name, col:p.col, seed:SEED, x:p.x, y:p.y, server:SERVER_NAME, max:MAX_PLAYERS, epoch, admin:p.admin,
       world: world.snapshot(),
+      chests: chestCounts(),
       players: [...players.values()].filter(o => o !== p).map(publicInfo),
       slots:p.inv.slots, equip:p.equip, coins:p.coins, xp:p.xp, energy:p.energy, stats:p.stats, achievements:p.ach,
       chat: chatLog.slice(-30), time:{ day:tm.day, min:tm.min },
@@ -472,6 +592,8 @@ setInterval(() => {
     if (nowMs - p.lastMine > 1500 && p.energy < 100) { p.energy = Math.min(100, p.energy + 1.5); sendMe(p); }
     p.stats.playMs += nowMs - p.lastSaveMs; p.lastSaveMs = nowMs;
     if (tm.day > p.stats.maxDay) { p.stats.maxDay = tm.day; touch(p); }
+    if (p.chest) openChestOf(p);              // longe demais ou baú sumiu: fecha
+
   }
   // trocas cancelam se alguém se afastar
   for (const t of [...trades.values()]) if (G.dist(t.a.x, t.a.y, t.b.x, t.b.y) > G.TRADE_DIST + G.TILE) endTrade(t, 'far', null);
@@ -487,7 +609,8 @@ setInterval(() => {
 function save() {
   for (const p of players.values()) profiles[p.name] = profileOf(p);
   if (!dirty && !players.size) return;
-  fs.writeFileSync(WORLD_FILE, JSON.stringify({ ...world.snapshot(), epoch }));
+  const cs = [...chests].filter(([, c]) => c.used()).map(([k, c]) => [...k.split(',').map(Number), c.slots]);
+  fs.writeFileSync(WORLD_FILE, JSON.stringify({ ...world.snapshot(), epoch, chests:cs }));
   fs.writeFileSync(PLAYERS_FILE, JSON.stringify(profiles));
   dirty = false;
 }

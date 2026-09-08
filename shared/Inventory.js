@@ -88,9 +88,17 @@
     }
 
     move(a, b) {
-      if (a === b || !this.slots[a] || b < 0 || b >= this.slots.length) return;
+      if (a === b) return;
+      this.transfer(this, a, b);
+    }
+
+    // Move a pilha do slot `a` para o slot `b` de outro inventário (ou deste
+    // mesmo). Empilha quando o destino tem o mesmo item e ainda cabe; senão
+    // troca as duas pilhas de lugar. Devolve false se nada foi feito.
+    transfer(other, a, b) {
+      if (!this.slots[a] || b < 0 || b >= other.slots.length) return false;
       const A = this.slots[a];
-      const B = this.slots[b];
+      const B = other.slots[b];
       const max = stackOf ? stackOf(A.item) : (ITEMS[A.item]?.tool ? 1 : 50);
 
       if (B && B.item === A.item && max > 1 && B.n < max) {
@@ -99,9 +107,22 @@
         A.n -= k;
         if (!A.n) this.slots[a] = null;
       } else {
-        this.slots[a] = B;
-        this.slots[b] = A;
+        this.slots[a] = B || null;
+        other.slots[b] = A;
       }
+      return true;
+    }
+
+    // Empurra a pilha inteira do slot `a` para o outro inventário, empilhando
+    // no que já existe lá. Devolve false se não coube nem uma unidade.
+    push(other, a) {
+      const A = this.slots[a];
+      if (!A) return false;
+      const rest = other.put(A);
+      if (rest === A.n) return false;
+      A.n = rest;
+      if (!A.n) this.slots[a] = null;
+      return true;
     }
 
     split(a) {

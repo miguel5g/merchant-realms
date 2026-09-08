@@ -9,11 +9,13 @@ import { renderInventory } from './inventory.js';
 import { renderProfile } from './profile.js';
 import { renderPlayers, renderChat } from './chat.js';
 import { renderChangelog } from './changelog.js';
+import { closeChest } from './chest.js';
 import { setSel } from '../input.js';
 
 export function uiOpen() {
   return !$('#inv').classList.contains('hidden') ||
          !$('#trade').classList.contains('hidden') ||
+         !$('#chest').classList.contains('hidden') ||
          !$('#profile').classList.contains('hidden') ||
          !$('#changelog').classList.contains('hidden');
 }
@@ -24,7 +26,8 @@ export function typing() {
 }
 
 export function closeAll() {
-  ['#inv', '#trade', '#profile', '#changelog', '#chatbox', '#players', '#ctx'].forEach(s => {
+  closeChest(false);
+  ['#inv', '#trade', '#chest', '#profile', '#changelog', '#chatbox', '#players', '#ctx'].forEach(s => {
     const el = $(s);
     if (el) el.classList.add('hidden');
   });
@@ -41,6 +44,7 @@ export function toggle(id) {
   const open = el.classList.contains('hidden');
 
   if (id === 'inv' || id === 'profile' || id === 'changelog') {
+    closeChest();
     $('#inv')?.classList.add('hidden');
     $('#profile')?.classList.add('hidden');
     $('#changelog')?.classList.add('hidden');
@@ -75,6 +79,8 @@ export function initWindowListeners() {
       if (typing()) {
         document.activeElement.blur();
         $('#chatbox')?.classList.add('hidden');
+      } else if (state.chest) {
+        closeChest();
       } else if (state.trade) {
         send('trade_cancel');
       } else {
@@ -96,7 +102,7 @@ export function initWindowListeners() {
       return;
     }
 
-    if (state.trade) return;
+    if (state.trade || state.chest) return;
 
     const k = e.key.toLowerCase();
     if (k === 'e' || e.key === 'Tab') {

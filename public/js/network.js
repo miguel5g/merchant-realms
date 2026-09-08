@@ -8,6 +8,7 @@ import { invalidateChunkAt } from './renderer.js';
 import { renderStatus, renderHotbar } from './ui/hud.js';
 import { renderInventory, renderCrafting } from './ui/inventory.js';
 import { openTrade, renderTradeInv } from './ui/trade.js';
+import { openChest, closeChest, renderChest } from './ui/chest.js';
 import { renderChat, renderPlayers, pushChat } from './ui/chat.js';
 import { renderProfile } from './ui/profile.js';
 import { closeAll } from './ui/windows.js';
@@ -61,6 +62,8 @@ export function leaveGame(msg) {
   state.others.clear();
   state.chat = [];
   state.trade = null;
+  state.chest = null;
+  state.chestUsed.clear();
   closeAll();
   $('#hud')?.classList.add('hidden');
   $('#menu')?.classList.remove('hidden');
@@ -113,6 +116,9 @@ export function onMessage(m) {
       for (const o of m.players) {
         state.others.set(o.id, { ...o, tx: o.x, ty: o.y });
       }
+      state.chest = null;
+      state.chestUsed.clear();
+      for (const [cx, cy, n] of m.chests || []) state.chestUsed.set(`${cx},${cy}`, n);
       state.serverInfo = { name: m.server, max: m.max, seed: m.seed };
       state.time = m.time;
       state.chat = m.chat.map(c => ({ ...c }));
@@ -154,7 +160,23 @@ export function onMessage(m) {
     case 'tile':
       state.world.set(m.x, m.y, m.t);
       state.world.setAmount(m.x, m.y, m.amount);
+      if (m.t !== Game.T.CHEST) state.chestUsed.delete(`${m.x},${m.y}`);
       invalidateChunkAt(m.x, m.y);
+      break;
+
+    case 'chest':
+      openChest(m);
+      break;
+
+    case 'chest_n':
+      if (m.n) state.chestUsed.set(`${m.x},${m.y}`, m.n);
+      else state.chestUsed.delete(`${m.x},${m.y}`);
+      break;
+
+    case 'chest_close':
+      closeChest(false);
+      if (m.reason === 'far') toast('Você se afastou do baú.');
+      if (m.reason === 'gone') toast('O baú não está mais lá.');
       break;
 
     case 'inv':
@@ -163,6 +185,7 @@ export function onMessage(m) {
       renderHotbar();
       renderInventory();
       renderTradeInv();
+      renderChest();
       break;
 
     case 'me':

@@ -8,6 +8,36 @@
 
 ## Não publicado
 
+**novo · Baú funcional: 48 slots de armazenamento por baú**
+
+O baú deixou de ser decorativo. Cada baú colocado no mundo ganhou um
+inventário próprio de **48 pilhas (6×8)**, independente de todos os outros e
+salvo junto com o mundo — o conteúdo continua lá depois de um reinício do
+servidor.
+
+- **Abrir**: **botão esquerdo** sobre um baú já posto. Não há conflito com os
+  controles atuais: um tile ocupado por um baú não aceita nada por cima, então
+  o botão esquerdo fica livre para abrir. **Esc** (ou o botão Fechar) fecha.
+- A janela mostra o baú em cima e o seu inventário embaixo, na mesma tela.
+  **Clique** pega a pilha e o **segundo clique** solta no slot de destino, em
+  qualquer um dos dois lados; **Shift+clique** manda a pilha inteira direto
+  para o outro lado, empilhando no que já estiver lá. O limite de empilhamento
+  de cada item é respeitado — 50 de material por slot, ferramentas uma a uma.
+- Dois jogadores podem mexer no mesmo baú ao mesmo tempo: quem está com a
+  janela aberta vê o conteúdo mudar na hora.
+- O painel de inspeção passa a mostrar quantas pilhas o baú guarda, com barra
+  de ocupação, e o cursor destaca em amarelo um baú ao alcance.
+
+**melhoria · Regras de segurança do baú**
+
+- Um baú com qualquer coisa dentro **não pode ser quebrado**: o servidor recusa
+  a quebra e avisa quantas pilhas ainda estão lá dentro. O `/place` também
+  recusa sobrescrever um baú com conteúdo.
+- Um baú não pode ser guardado dentro de outro baú.
+- Se o jogador acabar a mais de **4 tiles** do baú com a janela aberta (um
+  `/tp`, por exemplo), a janela fecha sozinha; o mesmo vale se o baú for
+  destruído por outra pessoa enquanto alguém o olha.
+
 **novo · Autocompletar de comandos no chat**
 
 Digitar `/` no chat abre uma lista com todos os comandos disponíveis e o que

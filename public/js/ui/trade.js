@@ -5,11 +5,13 @@
 import { state } from '../state.js';
 import { $, esc, slotHTML } from '../utils.js';
 import { send } from '../network.js';
+import { closeChest } from './chest.js';
 
 export function openTrade() {
   const t = state.trade;
   if (!t) return;
 
+  closeChest();
   $('#inv')?.classList.add('hidden');
   $('#profile')?.classList.add('hidden');
   $('#trade')?.classList.remove('hidden');

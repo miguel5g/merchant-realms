@@ -16,6 +16,8 @@
   const STACK = 50;
   const REACH = 3 * TILE;
   const TRADE_DIST = 5 * TILE;          // distância máxima para negociar
+  const CHEST_SLOTS = 48;               // 6 x 8 — capacidade de cada baú
+  const CHEST_DIST = 4 * TILE;          // afastou-se mais que isso: o baú fecha sozinho
   const LOCAL_CHAT_DIST = 20 * TILE;    // alcance do canal Local
   const DAY_MS = 10 * 60 * 1000;        // 1 dia de jogo = 10 minutos reais
   const DAILY_COINS = 10;
@@ -46,7 +48,7 @@
     'placa de cobre':   { label:'Placa de cobre',      desc:'Componente de fiação e circuitos.',                      col:'#e0925c', value:5 },
     engrenagem:         { label:'Engrenagem',          desc:'Peça mecânica feita de placas de ferro.',                col:'#acb0ba', value:12 },
     muro:               { label:'Muro de pedra',       desc:'Bloqueia passagem. Botão esquerdo para colocar.',        col:'#c9b79c', value:3, place:T.WALL },
-    baú:                { label:'Baú',                 desc:'Decorativo por enquanto. Botão esquerdo para colocar.',  col:'#966432', value:8, place:T.CHEST },
+    baú:                { label:'Baú',                 desc:'Guarda 48 pilhas. Botão esquerdo coloca; sobre um baú já posto, abre.', col:'#966432', value:8, place:T.CHEST },
     'picareta de pedra':{ label:'Picareta de pedra',   desc:'Minera rochas e minérios mais rápido. Gasta com o uso.', col:'#b0b0aa', value:6, tool:'pick', dur:120 },
     'machado de pedra': { label:'Machado de pedra',    desc:'Corta árvores mais rápido. Gasta com o uso.',            col:'#a67a4a', value:5, tool:'axe',  dur:120 },
   };
@@ -179,6 +181,8 @@
     STACK,
     REACH,
     TRADE_DIST,
+    CHEST_SLOTS,
+    CHEST_DIST,
     LOCAL_CHAT_DIST,
     DAY_MS,
     DAILY_COINS,

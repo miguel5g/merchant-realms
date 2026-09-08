@@ -39,6 +39,8 @@ export const state = {
   lastWhisper: null,
   chat: [],
   trade: null,
+  chest: null,                 // baú aberto: { x, y, slots }
+  chestUsed: new Map(),        // "x,y" -> pilhas guardadas (cache p/ cursor e inspeção)
   camera: { x: 0, y: 0 },
   servers: { list: [], sel: 0 },
   rejectReason: null,

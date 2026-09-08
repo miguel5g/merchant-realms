@@ -38,6 +38,7 @@
   <div id="controls" class="hidden">
     <div><b>WASD / setas</b> mover</div><div><b>botão esquerdo</b> colocar item selecionado</div>
     <div><b>botão direito</b> quebrar bloco/recurso (segure)</div><div><b>1–8 / scroll</b> selecionar na hotbar</div>
+    <div><b>botão esquerdo</b> em um baú abre o baú</div><div><b>Shift+clique</b> move a pilha inteira no baú</div>
     <div><b>E</b> inventário e fabricação</div><div><b>Enter</b> chat · <b>T</b> jogadores</div>
     <div><b>P</b> perfil · <b>C</b> changelog</div><div><b>Esc</b> fecha qualquer janela</div>
   </div>
@@ -104,6 +105,21 @@
       <div class="cats" id="inv-cats"></div>
       <div class="craft"><div id="recipes"></div><div id="rdetail"></div></div>
       <div class="dim" style="font-size:17px">Shift+clique fabrica o máximo · E ou Esc fecha</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 1j baú ===== -->
+<div id="chest" class="modal-bg hidden">
+  <div class="modal">
+    <div class="row"><span class="title" id="ch-title">Baú</span><span class="dim" id="ch-used">0 / 48 ocupados</span></div>
+    <div class="grid8" id="ch-grid"></div>
+    <div class="rule"></div>
+    <div class="row"><span class="subtitle">Seu inventário</span><span class="dim" id="ch-invused">0 / 32 ocupados</span></div>
+    <div class="grid8" id="ch-inv"></div>
+    <div class="foot">
+      <span class="dim">clique pega e solta · <b>Shift</b>+clique manda a pilha inteira</span>
+      <button class="btn small" id="ch-close">Fechar (Esc)</button>
     </div>
   </div>
 </div>

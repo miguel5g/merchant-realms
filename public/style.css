@@ -225,6 +225,15 @@ input:focus { box-shadow:0 0 0 2px var(--gold); }
 #trade .about { flex:0 0 auto; }
 #trade .foot { display:flex; justify-content:space-between; align-items:center; gap:14px; }
 
+/* ===== 1j baú ===== */
+#chest .modal { width:min(560px, 96vw); height:min(760px, 94vh); padding:20px 24px; display:flex; flex-direction:column; gap:10px; overflow:hidden; }
+#chest .grid8 { max-width:none; gap:5px; align-items:stretch; min-height:0; }
+#chest .grid8 > .slot { width:auto; height:auto; min-width:0; min-height:0; aspect-ratio:auto; }
+#chest #ch-grid { grid-template-rows:repeat(6,minmax(0,1fr)); flex:6 1 0; }
+#chest #ch-inv { grid-template-rows:repeat(4,minmax(0,1fr)); flex:4 1 0; }
+#chest .foot { display:flex; justify-content:space-between; align-items:center; gap:14px; font-size:17px; }
+#chest .foot b { color:var(--text); font-weight:normal; }
+
 /* ===== 1h perfil ===== */
 #profile .modal { width:min(1000px, 96vw); height:min(580px, 92vh); display:grid; grid-template-columns:300px 1fr; }
 #profile .left { border-right:3px solid var(--ink); padding:26px; display:flex; flex-direction:column; align-items:center; gap:14px; }

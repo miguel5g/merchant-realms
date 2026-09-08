@@ -8,6 +8,7 @@ import { send } from './network.js';
 import { uiOpen, typing } from './ui/windows.js';
 import { worldTooltip, hideWorldTooltip } from './ui/hud.js';
 import { handleMovement, handleMining, harvestable, genStock, mouseTile, inReach, selectedItem, overlapsPlayer } from './input.js';
+import { checkChestRange, chestUsedAt } from './ui/chest.js';
 
 let COL = null;
 let MMCOL = null;
@@ -55,6 +56,7 @@ export function draw() {
   initPalette();
 
   if (state.inGame) {
+    checkChestRange();
     if (!uiOpen() && !typing()) handleMovement();
     if (!uiOpen()) handleMining(); else state.mining.t0 = 0;
 
@@ -248,12 +250,14 @@ export function drawCursor() {
   const item = selectedItem();
   const res = harvestable(tx, ty);
   const stock = genStock(tx, ty);
-  const canMine = inReach(tx, ty) && !!res && !(stock !== null && stock <= 0);
+  const stored = t === Game.T.CHEST ? chestUsedAt(tx, ty) : 0;   // baú com coisas dentro não quebra
+  const canMine = inReach(tx, ty) && !!res && !(stock !== null && stock <= 0) && !stored;
+  const canOpen = t === Game.T.CHEST && inReach(tx, ty);
   const canPlace = inReach(tx, ty) && item && Game.ITEMS[item]?.place && state.world.placeable(tx, ty) && !overlapsPlayer(tx, ty);
 
   noFill();
   strokeWeight(2);
-  stroke(canMine || canPlace ? color(242, 199, 107) : color(255, 255, 255, 70));
+  stroke(canMine || canPlace || canOpen ? color(242, 199, 107) : color(255, 255, 255, 70));
   rect(tx * TILE + 1, ty * TILE + 1, TILE - 2, TILE - 2);
 
   if (canPlace && !canMine) {

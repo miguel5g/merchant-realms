@@ -8,6 +8,7 @@ import { send } from './network.js';
 import { uiOpen } from './ui/windows.js';
 import { renderHotbar } from './ui/hud.js';
 import { renderInventory } from './ui/inventory.js';
+import { chestUsedAt } from './ui/chest.js';
 
 const HOTBAR = 8;
 
@@ -119,7 +120,9 @@ export function handleMining() {
     state.mining.t0 = millis();
   }
   const stock = genStock(tx, ty);
-  const delay = stock !== null && stock <= 0 ? RESYNC_MS : Game.mineTime(res, state.player.equip);
+  const delay = (stock !== null && stock <= 0) || chestUsedAt(tx, ty)
+    ? RESYNC_MS
+    : Game.mineTime(res, state.player.equip);
   if (millis() - state.mining.t0 >= delay) {
     send('mine', { x: tx, y: ty });
     state.mining.t0 = millis();
@@ -163,6 +166,13 @@ export function handleMousePressed(e) {
     return;
   }
   if (mouseButton === LEFT) {
+    // Um tile com baú nunca aceita nada por cima, então o botão esquerdo pode
+    // abri-lo sem disputar com a colocação de itens.
+    const [tx, ty] = mouseTile();
+    if (state.world && state.world.tile(tx, ty) === Game.T.CHEST && inReach(tx, ty)) {
+      send('chest_open', { x: tx, y: ty });
+      return;
+    }
     handlePlacement();
   }
 }

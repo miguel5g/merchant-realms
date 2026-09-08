@@ -5,6 +5,7 @@
 import { state } from '../state.js';
 import { $, esc, slotHTML, iconHTML, showTip, hideTip } from '../utils.js';
 import { mouseTile, inReach, selectedItem, overUI, setSel } from '../input.js';
+import { chestUsedAt } from './chest.js';
 
 const HOTBAR = 8;
 
@@ -73,7 +74,9 @@ export function worldTooltip() {
   const en = state.player.energy;
   const hasTool = !!(res.tool && state.player.equip[res.tool]);
 
-  const stateKey = `${tx},${ty},${t},${amt},${reach},${hasSp},${en < 1},${hasTool}`;
+  const stored = t === Game.T.CHEST ? chestUsedAt(tx, ty) : 0;
+
+  const stateKey = `${tx},${ty},${t},${amt},${reach},${hasSp},${en < 1},${hasTool},${stored}`;
   if (panel.dataset.resKey === stateKey && !panel.classList.contains('hidden')) return;
   panel.dataset.resKey = stateKey;
 
@@ -111,6 +114,17 @@ export function worldTooltip() {
       <div class="insp-row"><span class="insp-tag">${amt > 0 ? 'segure botão direito para recolher' : 'aguarde a produção'}</span></div>
       ${alertHTML}
     `;
+  } else if (t === Game.T.CHEST) {
+    const pctCh = Math.round((stored / Game.CHEST_SLOTS) * 100);
+    bodyHTML = `
+      <div class="insp-row"><span>Guarda</span><span class="val">${stored} / ${Game.CHEST_SLOTS} pilhas</span></div>
+      <div class="insp-bar"><div class="fill" style="width:${pctCh}%"></div></div>
+      <div class="insp-row"><span class="insp-tag ok">botão esquerdo abre</span></div>
+      ${stored
+        ? '<div class="insp-alert warn">esvazie o baú para poder quebrá-lo</div>'
+        : `<div class="insp-row"><span>Quebrar</span><span class="val">botão direito · ${timeSec}s</span></div>`}
+      ${alertHTML}
+    `;
   } else if (res.built) {
     bodyHTML = `
       <div class="insp-row"><span class="val">botão direito para quebrar</span></div>
@@ -133,7 +147,7 @@ export function worldTooltip() {
       ${iconHTML(res.item)}
       <div class="insp-title">
         <div class="insp-name">${esc(res.name)}</div>
-        <div class="insp-type">${gen ? 'estrutura de blueprint' : res.built ? 'construção' : 'recurso natural'}</div>
+        <div class="insp-type">${gen ? 'estrutura de blueprint' : t === Game.T.CHEST ? 'armazenamento' : res.built ? 'construção' : 'recurso natural'}</div>
       </div>
     </div>
     <div class="insp-body">
