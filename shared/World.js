@@ -102,8 +102,7 @@
     }
 
     walkable(x, y) {
-      const t = this.tile(x, y);
-      return t !== T.WATER && t < 10;
+      return tileWalkable(this.tile(x, y));
     }
 
     placeable(x, y) {
@@ -170,6 +169,12 @@
     }
   }
 
+  // Um tile solto é atravessável? (não depende do mundo — serve para
+  // validar um bloco antes de colocá-lo)
+  function tileWalkable(t) {
+    return t !== T.WATER && t < 10;
+  }
+
   // Atalhos para compatibilidade direta
   const dist = (ax, ay, bx, by) => World.dist(ax, ay, bx, by);
   const inReach = (px, py, tx, ty) => World.inReach(px, py, tx, ty);
@@ -180,5 +185,6 @@
     dist,
     inReach,
     mineTime,
+    tileWalkable,
   };
 });

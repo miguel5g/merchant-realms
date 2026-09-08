@@ -5,6 +5,7 @@
 import { state } from '../state.js';
 import { $, esc, toast } from '../utils.js';
 import { send } from '../network.js';
+import { initChatComplete, closeComplete } from './chatcmd.js';
 
 export function pushChat(m) {
   state.chat.push(m);
@@ -161,32 +162,41 @@ export function initChatListeners() {
     e.preventDefault();
     const inp = $('#chatinput');
     if (!inp) return;
-    let text = inp.value.trim();
+    const raw = inp.value.trim();
     inp.value = '';
-    if (!text) return;
-
-    let ch = state.chatTab === 'all' ? 'global' : state.chatTab, to = null;
-    const cmd = text.match(/^\/(\w+)\s*(.*)$/s);
-    if (cmd) {
-      const [, c, rest] = cmd;
-      if (c === 'w' || c === 'sussurrar') {
-        const m = rest.match(/^(?:\"([^\"]+)\"|'([^']+)'|(\S+))\s+(.*)$/s);
-        if (!m) return toast('Uso: /w nome mensagem');
-        ch = 'whisper'; to = m[1] || m[2] || m[3]; text = m[4];
-      } else if (c === 'r') {
-        if (!state.lastWhisper) return toast('Ninguém sussurrou para você ainda.');
-        ch = 'whisper'; to = state.lastWhisper; text = rest;
-      } else if (c === 'g') {
-        ch = 'global'; text = rest;
-      } else if (c === 'l') {
-        ch = 'local'; text = rest;
-      } else if (c === 't') {
-        ch = 'trade'; text = rest;
-      } else {
-        return toast('Comandos: /w nome msg · /r msg · /g · /l · /t');
-      }
-    }
-    if (ch === 'whisper' && !to) return toast('Para sussurrar use /w nome mensagem.');
-    if (text.trim()) send('chat', { ch, text, to });
+    closeComplete();
+    if (!raw) return;
+    sendLine(raw);
   });
+
+  initChatComplete();
+}
+
+/* Uma linha digitada no chat: comando conhecido ou mensagem do canal atual.
+   Comandos de canal viram uma mensagem aqui mesmo; os de servidor (admin)
+   seguem crus para o servidor, que analisa e responde. */
+export function sendLine(raw) {
+  let ch = state.chatTab === 'all' ? 'global' : state.chatTab, to = null, text = raw;
+
+  if (raw.startsWith('/')) {
+    const parsed = Game.parseCommand(raw);
+    if (!parsed.ok) {
+      // Comando desconhecido: mostra a lista. Argumento faltando: o erro já traz o uso.
+      const list = Game.commandsFor(state.player.admin).map(c => Game.usage(c)).join(' · ');
+      return toast(parsed.def ? parsed.error : `${parsed.error} Comandos: ${list}`);
+    }
+    const { def, values } = parsed;
+
+    if (def.scope === 'server') return send('cmd', { text: raw });
+
+    ch = def.ch;
+    text = values.mensagem || '';
+    if (ch === 'whisper') {
+      to = def.reply ? state.lastWhisper : values.jogador;
+      if (!to) return toast('Ninguém sussurrou para você ainda.');
+    }
+    if (!text.trim()) return toast(`Uso: ${Game.usage(def)}`);
+  }
+
+  if (text.trim()) send('chat', { ch, text, to });
 }

@@ -41,6 +41,7 @@ Variáveis de ambiente:
 | `SERVER_NAME`  | Vale do Norte   | nome mostrado no menu |
 | `MAX_PLAYERS`  | 50              | limite de jogadores |
 | `PEERS`        | (vazio)         | URLs de outros servidores, separadas por vírgula, para aparecerem na lista do menu |
+| `ADMINS`       | (vazio)         | nomes de jogadores com acesso a `/kick`, `/give` e `/place`, separados por vírgula |
 
 Exemplo com dois servidores na mesma máquina:
 
@@ -57,8 +58,32 @@ Um dia de jogo dura 10 minutos reais; a cada dia novo cada jogador online recebe
 WASD move · botão esquerdo coloca o item selecionado · botão direito quebra bloco/recurso (segure)
 1–8 ou scroll seleciona na hotbar · E inventário e fabricação · Enter chat · T jogadores · P perfil · Esc fecha
 
-Chat: `/w nome msg` sussurra, `/r msg` responde, `/l` local (20 tiles), `/t` comércio, `/g` global.
 Para negociar: T → clique no jogador → Negociar (precisa estar a até 5 tiles).
+
+## Comandos de chat
+
+Digite `/` no chat para abrir a lista de comandos. O autocompletar sugere os
+valores de cada campo (jogadores online, itens, blocos, coordenadas):
+**Tab** completa, **↑↓** escolhem, **Esc** fecha. `<obrigatório>` e `[opcional]`.
+
+| comando | o que faz |
+|---------|-----------|
+| `/w <jogador> <mensagem>` | sussurra para alguém |
+| `/r <mensagem>`           | responde o último sussurro |
+| `/g` · `/l` · `/t` `<mensagem>` | fala em global, local (20 tiles) ou comércio |
+| `/kick <jogador> [motivo]` | expulsa um jogador do servidor |
+| `/give <jogador> <item> [quantidade]` | entrega um item (1 se a quantidade for omitida) |
+| `/place <x> <z> <bloco>`  | coloca um bloco em qualquer ponto do mundo |
+
+Os três últimos são de administrador: só funcionam para nomes listados em
+`ADMINS` e nem aparecem no autocompletar de quem não é. Itens e blocos aceitam
+o nome com ou sem acento (`bau` acha `baú`) e com espaços (`placa de ferro`).
+`/place` não tem limite de alcance: a única recusa é colocar um bloco sólido
+num tile onde há um jogador de pé.
+
+```
+ADMINS="Miguel,Chefe" npm start
+```
 
 ## Estrutura
 
@@ -70,6 +95,7 @@ shared/Crafting.js    classe e regras de receitas e fabricação
 shared/Progression.js classe de níveis, títulos, perícias e conquistas
 shared/GameTime.js    classe de ciclo de tempo e relógio
 shared/World.js       classe de gestão e manipulação do mundo
+shared/Commands.js    registro dos comandos de chat: argumentos, análise e valores válidos
 shared/game.js        agregador e compatibilidade Node.js / browser
 server.js             Fastify: estáticos, WebSocket, validação, chat, comércio, dia/noite, persistência
 public/index.html     telas (menu, HUD, inventário, comércio, chat, perfil)

@@ -29,7 +29,7 @@ export function connect(base, name) {
 
   state.ws.onclose = () => {
     if (state.inGame) {
-      leaveGame('Desconectado do servidor.');
+      leaveGame(state.rejectReason || 'Desconectado do servidor.');
     } else {
       const errEl = $('#menu-err');
       if (errEl) {
@@ -85,6 +85,11 @@ export function onMessage(m) {
       if (err) err.textContent = m.reason;
       break;
 
+    case 'kicked':
+      state.rejectReason = `Você foi expulso por ${m.by}${m.reason ? ` — ${m.reason}` : ''}.`;
+      toast(state.rejectReason);
+      break;
+
     case 'init':
       state.world = new Game.World(m.seed);
       state.world.load(m.world);
@@ -100,6 +105,7 @@ export function onMessage(m) {
         energy: m.energy,
         stats: m.stats,
         achievements: m.achievements,
+        admin: !!m.admin,
         equip: m.equip
       });
       state.player.inv.slots = m.slots;

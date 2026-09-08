@@ -23,7 +23,8 @@ export const state = {
     xp: 0,
     energy: 100,
     stats: {},
-    achievements: []
+    achievements: [],
+    admin: false
   },
   others: new Map(),
   chunkCache: new Map(),

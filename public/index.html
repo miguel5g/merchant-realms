@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="/style.css?v=0.5.0">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
 <script src="/shared/constants.js"></script>
+<script src="/shared/Commands.js"></script>
 <script src="/shared/PerlinNoise.js"></script>
 <script src="/shared/Inventory.js"></script>
 <script src="/shared/Crafting.js"></script>
@@ -72,7 +73,10 @@
     <button data-tab="all" class="on">Tudo</button><button data-tab="global">Global</button><button data-tab="local">Local</button><button data-tab="whisper">Sussurro</button><button data-tab="trade">Comércio</button>
   </div>
   <div id="chatlog"></div>
-  <form id="chatform"><span class="chip" id="chatchip">global</span><input id="chatinput" maxlength="200" autocomplete="off" placeholder="/w nome mensagem · /r responde · /l local · /t comércio"><button type="submit">Enviar</button></form>
+  <div class="entry">
+    <div id="chat-ac" class="hidden"></div>
+    <form id="chatform"><span class="chip" id="chatchip">global</span><input id="chatinput" maxlength="200" autocomplete="off" placeholder="digite / para ver os comandos · Tab completa"><button type="submit">Enviar</button></form>
+  </div>
 </div>
 
 <!-- ===== 1g lista de jogadores ===== -->

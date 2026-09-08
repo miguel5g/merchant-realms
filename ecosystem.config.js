@@ -28,7 +28,9 @@ module.exports = {
         PORT: 3100,
         SERVER_NAME: 'Vale do Norte',
         SEED: 1029,
-        MAX_PLAYERS: 20
+        MAX_PLAYERS: 20,
+        // nomes com acesso a /kick, /give e /place, separados por vírgula
+        ADMINS: ''
       },
 
       // Ambiente de produção: pm2 start ecosystem.config.js --env production
@@ -37,7 +39,8 @@ module.exports = {
         PORT: 3100,
         SERVER_NAME: 'Vale do Norte',
         SEED: 1029,
-        MAX_PLAYERS: 20
+        MAX_PLAYERS: 20,
+        ADMINS: ''
       }
     }
   ]

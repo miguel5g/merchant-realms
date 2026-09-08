@@ -8,7 +8,45 @@
 
 ## Não publicado
 
-_(nada acumulado — última versão publicada: v0.5.0)_
+**novo · Autocompletar de comandos no chat**
+
+Digitar `/` no chat abre uma lista com todos os comandos disponíveis e o que
+cada um faz. Escolhido o comando, a lista passa a sugerir os valores do campo
+sob o cursor: jogadores online (com a cor e o nível de cada um), itens do jogo
+(com o ícone colorido), blocos colocáveis e as coordenadas da própria posição
+para o `/place`. **Tab** completa a sugestão em destaque, **↑↓** escolhem outra,
+**Esc** fecha a lista sem fechar o chat. Uma linha no topo mostra a assinatura
+do comando — `/give <jogador> <item> [quantidade]` — com o campo atual
+destacado, deixando claro o que ainda falta preencher (`<>` obrigatório,
+`[]` opcional). A busca ignora acentos e maiúsculas (`bau` acha `baú`) e valores
+com espaço são completados inteiros (`pla` → `placa de ferro`).
+
+**novo · Comandos de administrador: /kick, /give e /place**
+
+Três comandos novos para quem administra o servidor:
+
+- `/kick <jogador> [motivo]` desconecta um jogador. O motivo aparece para quem
+  foi expulso e é anunciado no chat para todo mundo. O progresso é salvo
+  normalmente antes da desconexão.
+- `/give <jogador> <item> [quantidade]` coloca um item direto no inventário de
+  alguém (1 unidade se a quantidade for omitida, até 999). Ferramentas chegam
+  com a durabilidade cheia e o servidor avisa se parte não coube no inventário.
+- `/place <x> <z> <bloco>` coloca qualquer bloco do jogo em qualquer ponto do
+  mundo, sem limite de alcance — inclusive terreno (água, areia, grama, pedra),
+  recursos (árvore, rocha, ferro, cobre) e estruturas (muro, baú, madeireira).
+  Uma madeireira colocada assim já entra produzindo. A única recusa é bloquear
+  um tile onde há um jogador de pé.
+
+Só quem está listado na variável `ADMINS` do servidor pode usá-los; para os
+demais os comandos nem aparecem no autocompletar, e o servidor recusa de novo
+caso alguém tente pela rede. Ao entrar, um administrador recebe no chat a lista
+do que tem disponível.
+
+**melhoria · Mensagem de saída mais clara ao ser expulso**
+
+Quem é expulso volta ao menu com o motivo escrito na tela, em vez do
+"Desconectado do servidor." genérico. No chat, quem foi expulso aparece como
+expulso — não mais como se tivesse saído por conta própria.
 
 ---
 
@@ -36,7 +74,32 @@ const GENERATORS = {
 ```
 
 Falta só desenhar o tile em `drawTile()` e a cor do minimapa em `MMCOL`
-([public/js/renderer.js](public/js/renderer.js)).
+([public/js/renderer.js](public/js/renderer.js)). O nome do bloco para o
+`/place` sai sozinho da chave do `GENERATORS` (`madeireira`).
+
+**Como adicionar um novo comando:** uma entrada em `COMMANDS`, em
+[shared/Commands.js](shared/Commands.js). O autocompletar, a assinatura na
+interface, as mensagens de erro de uso e a análise no servidor saem todos dela:
+
+```js
+{
+  name: 'give', scope: 'server', admin: true,
+  desc: 'Entrega um item para um jogador.',
+  args: [
+    { name: 'jogador', type: 'player' },              // tipo = o que autocompletar
+    { name: 'item', type: 'item', greedy: true },     // greedy junta o resto (aceita espaços)
+    { name: 'quantidade', type: 'int', opt: true, tail: true },  // opcional numérico no fim
+  ],
+}
+```
+
+- `scope: 'chat'` resolve no cliente (vira mensagem de canal); `scope: 'server'`
+  manda a linha crua e o servidor executa — nesse caso, acrescentar a função em
+  `commands` no [server.js](server.js).
+- `type` novo pede duas coisas: `optionsFor()` em
+  [public/js/ui/chatcmd.js](public/js/ui/chatcmd.js) (o que sugerir) e, se o
+  valor puder ter espaço, `isComplete()` em `Commands.js` (para o argumento
+  greedy saber quando terminou).
 
 **Pendências conhecidas:**
 
@@ -48,3 +111,7 @@ Falta só desenhar o tile em `drawTile()` e a cor do minimapa em `MMCOL`
 - A madeireira produz para quem chegar primeiro: não tem dono nem controle de
   acesso.
 - Recolher gasta 1 de energia por unidade, igual a minerar.
+- `ADMINS` é por nome de jogador, sem senha: quem entrar com um nome da lista é
+  administrador. Só faz sentido enquanto não existir conta com autenticação.
+- `/kick` não impede a pessoa de entrar de novo em seguida — não há banimento
+  nem tempo de espera.

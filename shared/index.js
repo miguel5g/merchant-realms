@@ -7,12 +7,14 @@ const { Inventory } = require('./Inventory');
 const { Crafting, canCraft, craftableCount, craft, offerValue } = require('./Crafting');
 const { Progression, levelFromXp, xpForLevel, titleFor, statNum, skillLevel, skillProgress } = require('./Progression');
 const { GameTime, gameTime, nightAlpha, fmtClock } = require('./GameTime');
-const { World, dist, inReach, mineTime } = require('./World');
+const { World, dist, inReach, mineTime, tileWalkable } = require('./World');
 const { CHANGELOG } = require('./Changelog');
+const Commands = require('./Commands');
 
 const Game = {
   // Constantes
   ...constants,
+  ...Commands,
   CHANGELOG,
 
   // Classes
@@ -41,6 +43,7 @@ const Game = {
   dist,
   inReach,
   mineTime,
+  tileWalkable,
 };
 
 module.exports = Game;

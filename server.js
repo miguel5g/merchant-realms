@@ -13,6 +13,7 @@ const SEED = +process.env.SEED || 1337;
 const SERVER_NAME = process.env.SERVER_NAME || 'Vale do Norte';
 const MAX_PLAYERS = +process.env.MAX_PLAYERS || 50;
 const PEERS = (process.env.PEERS || '').split(',').map(s => s.trim()).filter(Boolean); // outros servidores, só para listar no menu
+const ADMINS = new Set((process.env.ADMINS || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean)); // nomes com acesso a /kick, /give e /place
 const WORLD_FILE = path.join(__dirname, 'world.json');
 const PLAYERS_FILE = path.join(__dirname, 'players.json');
 
@@ -46,6 +47,7 @@ function sendMe(p) { send(p, 'me', { coins:p.coins, xp:p.xp, energy:Math.round(p
 function achievementsOf(p) { return G.ACHIEVEMENTS.filter(a => a.test(p.stats)).map(a => a.id); }
 function sys(text, p, extra = {}) { const m = { type:'sys', text, day:now().day, ...extra }; if (p) send(p, 'sys', m); else broadcast('sys', m); }
 function now() { return G.gameTime(Date.now(), epoch); }
+function isAdmin(name) { return ADMINS.has(String(name).toLowerCase()); }
 function findByName(name) { name = name.toLowerCase(); for (const p of players.values()) if (p.name.toLowerCase() === name) return p; return null; }
 function gainXp(p, n) { const before = G.levelFromXp(p.xp); p.xp += n; const after = G.levelFromXp(p.xp); if (after > before) sys(`Você chegou ao nível ${after} — ${G.titleFor(after)}.`, p); }
 function checkAchievements(p) {
@@ -76,6 +78,16 @@ function tickGenerators() {
     broadcast('tile', tileMsg(x, y));
     dirty = true;
   }
+}
+
+/* ---------- ocupação de tiles ---------- */
+// Jogador em cima do tile (x, y), ou null. Impede soterrar alguém.
+function playerOnTile(x, y) {
+  const pr = 9;
+  for (const o of players.values()) {
+    if (o.x + pr > x * G.TILE && o.x - pr < (x + 1) * G.TILE && o.y + pr > y * G.TILE && o.y - pr < (y + 1) * G.TILE) return o;
+  }
+  return null;
 }
 
 /* ---------- comércio ---------- */
@@ -121,6 +133,66 @@ function completeTrade(t) {
   trades.delete(t.id);
 }
 
+/* ---------- comandos de chat ----------
+   As definições vivem em shared/Commands.js (o cliente usa as mesmas
+   para autocompletar). Aqui fica só a execução, que é autoritativa:
+   o cliente manda a linha crua e o servidor decide o que acontece. */
+const COORD_LIMIT = 1e6;
+
+function kick(target, reason, by) {
+  target.kicked = { reason, by: by.name };
+  send(target, 'kicked', { reason, by: by.name });
+  sys(`${target.name} foi expulso por ${by.name}${reason ? ` — ${reason}` : ''}.`);
+  console.log(`kick: ${by.name} -> ${target.name}${reason ? ` (${reason})` : ''}`);
+  try { target.socket.close(4001, 'kicked'); } catch { /* já caiu */ }
+}
+
+const commands = {
+  kick(p, v) {
+    const target = findByName(v.jogador);
+    if (!target) return sys(`Ninguém online com o nome "${v.jogador}".`, p);
+    if (target === p) return sys('Você não pode expulsar a si mesmo.', p);
+    kick(target, (v.motivo || '').trim(), p);
+  },
+
+  give(p, v) {
+    const target = findByName(v.jogador);
+    if (!target) return sys(`Ninguém online com o nome "${v.jogador}".`, p);
+    const item = G.resolveItem(v.item);
+    if (!item) return sys(`Item desconhecido: "${v.item}".`, p);
+    const n = v.quantidade === undefined ? 1 : parseInt(v.quantidade, 10);
+    if (!Number.isInteger(n) || n < 1 || n > 999) return sys('Quantidade inválida — use de 1 a 999.', p);
+
+    const rest = target.inv.add(item, n);
+    const got = n - rest;
+    const label = G.ITEMS[item].label;
+    if (!got) return sys(`O inventário de ${target.name} está cheio.`, p);
+    sendInv(target); dirty = true;
+    sys(`${got}× ${label} entregue a ${target.name}${rest ? ` (${rest} não coube no inventário)` : ''}.`, p);
+    if (target !== p) sys(`Você recebeu ${got}× ${label} de ${p.name}.`, target);
+    console.log(`give: ${p.name} -> ${target.name}: ${got}x ${item}`);
+  },
+
+  place(p, v) {
+    const x = Number(v.x), y = Number(v.z);
+    if (!Number.isInteger(x) || !Number.isInteger(y) || Math.abs(x) > COORD_LIMIT || Math.abs(y) > COORD_LIMIT) {
+      return sys('Coordenadas inválidas — use números inteiros de tile (ex: /place 12 -40 muro).', p);
+    }
+    const name = G.resolveBlock(v.bloco);
+    if (!name) return sys(`Bloco desconhecido: "${v.bloco}". Disponíveis: ${G.BLOCK_NAMES.join(', ')}.`, p);
+    const tile = G.BLOCKS[name];
+    const blocked = !G.tileWalkable(tile) && playerOnTile(x, y);
+    if (blocked) return sys(`${blocked.name} está em cima de ${x}, ${y} — não dá para bloquear o tile.`, p);
+
+    world.set(x, y, tile);
+    armGenerator(x, y);
+    broadcast('tile', tileMsg(x, y));
+    dirty = true;
+    sys(`${G.BLOCK_LABEL[name]} colocado em ${x}, ${y}.`, p);
+    console.log(`place: ${p.name} -> ${name} em ${x},${y}`);
+  },
+};
+
 /* ---------- handlers ---------- */
 const handlers = {
   move(p, m) {
@@ -157,12 +229,7 @@ const handlers = {
     const { x, y } = m, s = p.inv.slots[p.sel];
     if (!s || !G.ITEMS[s.item]?.place) return sendInv(p);
     if (!Number.isInteger(x) || !Number.isInteger(y) || !G.inReach(p.x, p.y, x, y) || !world.placeable(x, y)) return sendInv(p);
-    const pr = 9;
-    for (const o of players.values()) {
-      if (o.x + pr > x * G.TILE && o.x - pr < (x + 1) * G.TILE && o.y + pr > y * G.TILE && o.y - pr < (y + 1) * G.TILE) {
-        return sendInv(p);
-      }
-    }
+    if (playerOnTile(x, y)) return sendInv(p);
     const taken = p.inv.take(p.sel, 1);
     if (!taken) return sendInv(p);
     world.set(x, y, G.ITEMS[taken.item].place);
@@ -205,6 +272,16 @@ const handlers = {
     if (ch === 'local') return broadcast('chat', msg, o => G.dist(o.x, o.y, p.x, p.y) <= G.LOCAL_CHAT_DIST);
     chatLog.push(msg); if (chatLog.length > 60) chatLog.shift();
     broadcast('chat', msg);
+  },
+
+  cmd(p, m) {
+    const text = String(m.text || '').trim().slice(0, 200);
+    const r = G.parseCommand(text);
+    if (!r.ok) return sys(r.error, p);
+    if (r.def.scope !== 'server') return sys(`"/${r.def.name}" não é um comando de servidor.`, p);
+    if (r.def.admin && !p.admin) return sys('Comando restrito a administradores.', p);
+    const fn = commands[r.def.name];
+    if (fn) fn(p, r.values);
   },
 
   trade_req(p, m) {
@@ -281,6 +358,7 @@ app.register(async function (f) {
     const saved = profiles[name] || profiles[name.replace(/_/g, ' ')] || {};
     const p = {
       id:nextId++, name, socket, sel:0, lastMine:0, energy:100, tradeId:null, tradeReqFrom:null, joinedAt:Date.now(), lastSaveMs:Date.now(),
+      admin: isAdmin(name), kicked: null,
       col: saved.col || G.PALETTE[nextId % G.PALETTE.length],
       x: saved.x ?? sx, y: saved.y ?? sy,
       inv: new G.Inventory(32), equip: saved.equip || { pick:null, axe:null },
@@ -290,11 +368,11 @@ app.register(async function (f) {
     if (!world.walkable(Math.floor(p.x / G.TILE), Math.floor(p.y / G.TILE))) { p.x = sx; p.y = sy; }
     p.ach = achievementsOf(p);
     players.set(p.id, p);
-    console.log(`+ ${p.name} (#${p.id}) — ${players.size} online`);
+    console.log(`+ ${p.name} (#${p.id})${p.admin ? ' [admin]' : ''} — ${players.size} online`);
 
     const tm = now();
     send(p, 'init', {
-      id:p.id, name:p.name, col:p.col, seed:SEED, x:p.x, y:p.y, server:SERVER_NAME, max:MAX_PLAYERS, epoch,
+      id:p.id, name:p.name, col:p.col, seed:SEED, x:p.x, y:p.y, server:SERVER_NAME, max:MAX_PLAYERS, epoch, admin:p.admin,
       world: world.snapshot(),
       players: [...players.values()].filter(o => o !== p).map(publicInfo),
       slots:p.inv.slots, equip:p.equip, coins:p.coins, xp:p.xp, energy:p.energy, stats:p.stats, achievements:p.ach,
@@ -303,6 +381,7 @@ app.register(async function (f) {
     broadcast('join', publicInfo(p), o => o !== p);
     sys(`${p.name} entrou.`, null, { exceptId:p.id });
     sys(`Bem-vindo a ${SERVER_NAME}. Dia ${tm.day}.`, p);
+    if (p.admin) sys(`Você é administrador aqui: ${G.COMMANDS.filter(c => c.admin).map(c => '/' + c.name).join(' · ')}.`, p);
 
     socket.on('message', raw => {
       let m; try { m = JSON.parse(raw); } catch { return; }
@@ -314,7 +393,7 @@ app.register(async function (f) {
       profiles[name] = profileOf(p); dirty = true;
       players.delete(p.id);
       broadcast('leave', { id:p.id });
-      sys(`${p.name} saiu.`);
+      if (!p.kicked) sys(`${p.name} saiu.`);
       console.log(`- ${p.name} (#${p.id}) — ${players.size} online`);
     });
   });
