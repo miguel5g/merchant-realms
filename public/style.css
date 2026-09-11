@@ -45,6 +45,7 @@ input:focus { box-shadow:0 0 0 2px var(--gold); }
 .slot.s44 { width:44px; height:44px; box-shadow:0 0 0 2px var(--line2); }
 .slot.s44 .icon { width:22px; height:22px; }
 .icon { width:26px; height:26px; box-shadow:inset -4px -4px 0 rgba(0,0,0,.35), inset 4px 4px 0 rgba(255,255,255,.22); }
+.icon svg { width:100%; height:100%; display:block; }
 .grid8 { display:grid; grid-template-columns:repeat(8,minmax(0,1fr)); gap:6px; max-width:426px; align-items:start; }
 .grid4 { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; max-width:210px; align-items:start; }
 .grid8 > .slot, .grid4 > .slot { width:auto; height:auto; min-width:0; aspect-ratio:1; }

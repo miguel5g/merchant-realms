@@ -107,8 +107,8 @@ export function draw() {
 
   if (state.inGame) {
     if (!uiOpen()) drawCursor();
-    for (const o of state.others.values()) drawCharacter(o.x, o.y, o.col, o.name);
-    drawCharacter(state.player.x, state.player.y, state.player.col, null);
+    for (const o of state.others.values()) drawCharacter(o, o.name);
+    drawCharacter(state.player, null);
   }
   pop();
 
@@ -228,20 +228,107 @@ export function drawTile(g, t, px, py, wx, wy) {
 }
 
 /* ---------- Personagens e Cursor ---------- */
-export function drawCharacter(x, y, col, name) {
+const SKIN_TONE = '#e0aa76';
+const HAIR_TONE = '#5a3d24';
+
+// Um jogador parado (idx 0) x avançado (idx 1) na passada — pernas e braços
+// se alternam em antifase pra dar impressão de andar, como no Stardew.
+function stepLift(entity, moving) {
+  if (!moving) return { legL: 0, legR: 0, armL: 0, armR: 0 };
+  const phase = Math.floor(entity._walkT / 6) % 2;
+  const lift = 4;
+  return phase === 0
+    ? { legL: lift, legR: 0, armL: 0, armR: lift }
+    : { legL: 0, legR: lift, armL: lift, armR: 0 };
+}
+
+// Boneco visto de frente/costas. Origem local (0,0) é o chão sob os pés —
+// mesmo ponto onde a sombra é desenhada.
+function drawBodyFront(col, lift, isBack) {
+  noStroke();
+  // pernas: topo fixo (preso ao corpo), a base sobe quando o pé "levanta" —
+  // antes a altura crescia dos dois lados e a base nunca saía do chão.
+  fill(40, 30, 20);
+  rect(-6, -8, 5, 8 - lift.legL);
+  rect(1, -8, 5, 8 - lift.legR);
+  // braços (atrás do corpo)
+  fill(col);
+  rect(-12, -21 + lift.armL, 4, 10);
+  rect(8, -21 + lift.armR, 4, 10);
+  // corpo/camisa
+  rect(-8, -22, 16, 14);
+  // cabeça
+  fill(SKIN_TONE);
+  rect(-7, -36, 14, 14);
+  // cabelo: de costas cobre a cabeça toda, de frente só o topo
+  fill(HAIR_TONE);
+  rect(-7, -36, 14, isBack ? 14 : 6);
+  if (!isBack) {
+    fill(30, 25, 20);
+    rect(-4, -27, 2, 2);
+    rect(2, -27, 2, 2);
+  }
+}
+
+// Perfil (direita); a visão esquerda é isso espelhado via scale(-1,1).
+function drawBodySide(col, lift) {
+  noStroke();
+  fill(40, 30, 20);
+  rect(-4, -8, 5, 8 - lift.legL);
+  rect(2, -8, 5, 8 - lift.legR);
+  fill(col);
+  rect(-10, -21 + lift.armL, 4, 10);
+  rect(6, -21 + lift.armR, 4, 10);
+  rect(-8, -22, 16, 14);
+  fill(SKIN_TONE);
+  rect(-6, -36, 15, 14); // rosto estendido pra frente (perfil)
+  fill(HAIR_TONE);
+  rect(-6, -36, 14, 6);
+  fill(30, 25, 20);
+  rect(4, -27, 2, 2); // um olho só, perto da borda de frente
+}
+
+export function drawCharacter(entity, name) {
+  const { x, y, col } = entity;
+
+  // Direção e fase de passo ficam gravadas no próprio objeto (state.player
+  // ou uma entrada de state.others) pra persistir entre frames sem precisar
+  // de um Map paralelo por id.
+  const dx = x - (entity._px ?? x);
+  const dy = y - (entity._py ?? y);
+  const moving = Math.hypot(dx, dy) > 0.05;
+  if (moving) {
+    entity.facing = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up');
+    entity._walkT = (entity._walkT || 0) + 1;
+  } else {
+    entity._walkT = 0;
+  }
+  if (!entity.facing) entity.facing = 'down';
+  entity._px = x;
+  entity._py = y;
+
+  // Sombra rente aos pés — as pernas terminam em y (base do sprite), então
+  // ela precisa ficar colada aí, não vários pixels abaixo (senão "flutua").
   noStroke();
   fill(0, 0, 0, 60);
-  ellipse(x, y + 8, 22, 10);
-  fill(col);
-  rect(x - 10, y - 10, 20, 20);
-  fill(60, 40, 20);
-  rect(x - 5, y - 3, 3, 3);
-  rect(x + 2, y - 3, 3, 3);
+  ellipse(x, y - 1, 22, 9);
+
+  const lift = stepLift(entity, moving);
+  push();
+  translate(x, y);
+  if (entity.facing === 'left' || entity.facing === 'right') {
+    if (entity.facing === 'left') scale(-1, 1);
+    drawBodySide(col, lift);
+  } else {
+    drawBodyFront(col, lift, entity.facing === 'up');
+  }
+  pop();
+
   if (name) {
     fill(col);
     textSize(16);
     textAlign(CENTER, BOTTOM);
-    text(name, x, y - 14);
+    text(name, x, y - 40);
   }
 }
 

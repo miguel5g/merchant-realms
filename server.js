@@ -606,12 +606,21 @@ setInterval(() => {
   }
 }, 1000);
 
+// Escrita atômica: grava num arquivo temporário e troca com rename, que no
+// mesmo filesystem é atômico. Evita que um processo morto no meio do save
+// deixe o JSON truncado (foi o que corrompeu world.json antes).
+function writeFileAtomic(file, data) {
+  const tmp = `${file}.tmp`;
+  fs.writeFileSync(tmp, data);
+  fs.renameSync(tmp, file);
+}
+
 function save() {
   for (const p of players.values()) profiles[p.name] = profileOf(p);
   if (!dirty && !players.size) return;
   const cs = [...chests].filter(([, c]) => c.used()).map(([k, c]) => [...k.split(',').map(Number), c.slots]);
-  fs.writeFileSync(WORLD_FILE, JSON.stringify({ ...world.snapshot(), epoch, chests:cs }));
-  fs.writeFileSync(PLAYERS_FILE, JSON.stringify(profiles));
+  writeFileAtomic(WORLD_FILE, JSON.stringify({ ...world.snapshot(), epoch, chests:cs }));
+  writeFileAtomic(PLAYERS_FILE, JSON.stringify(profiles));
   dirty = false;
 }
 setInterval(save, 10000);

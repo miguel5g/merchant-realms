@@ -116,7 +116,7 @@ export function handleMining() {
   if (!state.world) return;
   const [tx, ty] = mouseTile();
   const res = harvestable(tx, ty);
-  const mining = mouseIsPressed && mouseButton === RIGHT && !overUI();
+  const mining = mouseIsPressed && mouseButton === LEFT && !overUI();
 
   if (mining && res && inReach(tx, ty) && !state.player.inv.hasSpace(res.item) && millis() - lastFullWarn > FULL_WARN_MS) {
     lastFullWarn = millis();
@@ -178,8 +178,8 @@ export function handleMousePressed(e) {
     ctx.classList.add('hidden');
     return;
   }
-  if (mouseButton === LEFT) {
-    // Um tile com baú nunca aceita nada por cima, então o botão esquerdo pode
+  if (mouseButton === RIGHT) {
+    // Um tile com baú nunca aceita nada por cima, então o botão direito pode
     // abri-lo sem disputar com a colocação de itens.
     const [tx, ty] = mouseTile();
     if (state.world && state.world.tile(tx, ty) === Game.T.CHEST && inReach(tx, ty)) {

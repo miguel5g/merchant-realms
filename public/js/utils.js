@@ -2,6 +2,8 @@
    utils.js — Utilitários de DOM, escape, tooltips e marcação HTML.
    ============================================================ */
 
+import { iconSVG } from './icons.js';
+
 export const $ = s => document.querySelector(s);
 export const $$ = s => document.querySelectorAll(s);
 export const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
@@ -19,7 +21,10 @@ export function toast(msg) {
 export function iconHTML(item, extra = '') {
   const info = Game.ITEMS[item];
   const col = info ? info.col : '#888';
-  return `<div class="icon" style="background:${col}${extra}"></div>`;
+  // Fallback pra cor sólida de antes fica por baixo — se algum item novo
+  // ainda não tiver ícone desenhado em icons.js, continua aparecendo o
+  // quadrado colorido em vez de ficar em branco.
+  return `<div class="icon" style="background:${col}${extra}">${iconSVG(item) || ''}</div>`;
 }
 
 export function tipFor(s) {
